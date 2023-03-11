@@ -156,7 +156,7 @@ typedef enum {
     KNX_COMMAND_MASK_VER_RESP   = 0x0DU,
     KXN_COMMAND_RESTART         = 0x0EU,
     KXN_COMMAND_ESCAPE          = 0x0FU,
-} KNXnetIP_CommandType
+} KNXnetIP_CommandType;
 
 
 
