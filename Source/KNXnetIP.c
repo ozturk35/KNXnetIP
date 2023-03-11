@@ -22,6 +22,19 @@
 
 /*==================[external function declarations]========================*/
 
+void KNXnetIP_GetLocalAddr(void);
+
+void KNXnetIP_GetPhysAddr(void);
+
+void KNXnetIP_GetPhysAddr(void);
+
+void KNXnetIP_SendRequest(void);
+
+void KNXnetIP_GetGroupAddr(void);
+
+void KNXnetIP_SetGroupAddr(void);
+
+
 /*==================[internal function declarations]========================*/
 
 /*==================[external constants]====================================*/
@@ -35,6 +48,9 @@
 /*==================[internal data]=========================================*/
 
 /*==================[external function definitions]=========================*/
+
+
+
 
 /*==================[internal function definitions]=========================*/
 

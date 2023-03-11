@@ -1,9 +1,9 @@
 /**
- * \file KNXnetIP.h
+ * \file KNXIPNet_Route.c
  * 
- * \brief KNXnet/IP
+ * \brief KNX IP Network
  * 
- * This file contains the implementation of KNXmodule KNXnet/IP
+ * This file contains the implementation of KNX module IP Network.
  * 
  * \version 1.0.0
  * 
@@ -14,12 +14,13 @@
  * unless expressly agreed to otherwise.
 */
 
-#ifndef KNXNETIP_H
-#define KNXNETIP_H
-
 /*==================[inclusions]============================================*/
 
 /*==================[macros]================================================*/
+
+/* Router Individual Address */
+#define KNX_IP_ROUTER_ADDR (0xFF00U)
+
 
 /*==================[type definitions]======================================*/
 
@@ -42,5 +43,3 @@
 /*==================[internal function definitions]=========================*/
 
 /*==================[end of file]===========================================*/
-
-#endif /* #ifndef KNXNETIP_H */

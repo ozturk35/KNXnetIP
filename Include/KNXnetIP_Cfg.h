@@ -1,5 +1,5 @@
 /**
- * \file KNXnetIP.h
+ * \file KNXnetIP_Cfg.h
  * 
  * \brief KNXnet/IP
  * 
@@ -14,8 +14,8 @@
  * unless expressly agreed to otherwise.
 */
 
-#ifndef KNXNETIP_H
-#define KNXNETIP_H
+#ifndef KNXNETIP_CFG_H
+#define KNXNETIP_CFG_H
 
 /*==================[inclusions]============================================*/
 
@@ -43,4 +43,4 @@
 
 /*==================[end of file]===========================================*/
 
-#endif /* #ifndef KNXNETIP_H */
+#endif /* #ifndef KNXNETIP_CFG_H */
