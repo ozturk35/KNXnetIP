@@ -21,6 +21,10 @@
 
 /*==================[macros]================================================*/
 
+/* Internet Protocol constants */
+#define KNXNETIP_PORT_NUMBER       (3671U)
+#define KNXNETIP_MULTICAST_ADDRESS ("224.0.23.12")
+
 /*==================[type definitions]======================================*/
 
 /*==================[external function declarations]========================*/

@@ -1,9 +1,9 @@
 /**
- * \file KNXnetIP_Cbk.h
+ * \file KNXnetIP_Test.c
  * 
- * \brief KNXnet/IP
+ * \brief KNX IP Network Test Code
  * 
- * This file contains the implementation of KNXmodule KNXnet/IP
+ * This file contains the implementation of KNX module IP Network Test.
  * 
  * \version 1.0.0
  * 
@@ -14,22 +14,20 @@
  * unless expressly agreed to otherwise.
 */
 
-#ifndef KNXNETIP_CBK_H
-#define KNXNETIP_CBK_H
-
 /*==================[inclusions]============================================*/
+#include "KNXnetIP_Api.h"
+#include "KNXnetIP_Cfg.h"
 
 /*==================[macros]================================================*/
 
 /*==================[type definitions]======================================*/
 
 /*==================[external function declarations]========================*/
+void KNXnetIP_Test(void);
 
 /*==================[internal function declarations]========================*/
 
 /*==================[external constants]====================================*/
-
-/*------------------[version constants definition]--------------------------*/
 
 /*==================[internal constants]====================================*/
 
@@ -41,6 +39,12 @@
 
 /*==================[internal function definitions]=========================*/
 
-/*==================[end of file]===========================================*/
+void KNXnetIP_Test(void)
+{
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+}
 
-#endif /* #ifndef KNXNETIP_CBK_H */
+
+/*==================[end of file]===========================================*/

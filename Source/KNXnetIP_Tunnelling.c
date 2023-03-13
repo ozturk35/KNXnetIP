@@ -1,9 +1,9 @@
 /**
- * \file KNXnetIP_Cbk.h
+ * \file KNXIPNet_Tunnelling.c
  * 
- * \brief KNXnet/IP
+ * \brief KNX IP Network Tunnelling
  * 
- * This file contains the implementation of KNXmodule KNXnet/IP
+ * This file contains the implementation of KNX module IP Network Tunnelling Service.
  * 
  * \version 1.0.0
  * 
@@ -13,9 +13,6 @@
  * All rights exclusively reserved for Ibrahim Ozturk,
  * unless expressly agreed to otherwise.
 */
-
-#ifndef KNXNETIP_CBK_H
-#define KNXNETIP_CBK_H
 
 /*==================[inclusions]============================================*/
 
@@ -42,5 +39,3 @@
 /*==================[internal function definitions]=========================*/
 
 /*==================[end of file]===========================================*/
-
-#endif /* #ifndef KNXNETIP_CBK_H */
