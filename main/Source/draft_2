@@ -1,0 +1,32 @@
+1. Connect the ESP32-S3 to the W5500 module using the SPI interface. 
+
+2. Configure the ESP32-S3 to use the SPI interface by setting the following parameters: 
+
+• SPI Mode = 0
+• SPI Frequency = 8MHZ
+• SPI Data Width = 8 bits
+• SPI Mode Select = 0
+
+3. Configure the ESP32-S3 GPIO pins to control the W5500 module: 
+
+• CS pin for W5500 = GPIO15
+• Reset pin for W5500 = GPIO13
+• IRQ pin for W5500 = GPIO12
+
+4. Configure the W5500 to use the SPI interface by setting the following parameters: 
+
+• SPI Mode = 0
+• SPI Frequency = 8MHZ
+• SPI Data Width = 8 bits
+• SPI Mode Select = 0
+
+5. Configure the ESP32-S3 to use the W5500 module by setting the following parameters: 
+
+• IP Address = 192.168.0.1
+• Subnet Mask = 255.255.255.0
+• Default Gateway = 192.168.0.1
+• DNS Servers = 8.8.8.8, 8.8.4.4
+
+6. Finally, enable the W5500 module by setting the following parameter: 
+
+• W5500 Enabled = true

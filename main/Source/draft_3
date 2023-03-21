@@ -1,0 +1,72 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <unistd.h>
+
+#define KNX_GROUP_ADDR_LEN 4
+#define KNX_TP1_HEADER_LEN 12
+#define KNX_TP1_PAYLOAD_LEN 56
+#define KNX_TP1_MSG_LEN (KNX_TP1_HEADER_LEN + KNX_TP1_PAYLOAD_LEN)
+
+// Structure to store the data received from the KNX Group Address
+typedef struct {
+	unsigned char data[KNX_TP1_MSG_LEN];
+} knx_data;
+
+// Function to read data from a KNX Group Address on TP1 network
+int knx_read_group_address(unsigned char* addr, knx_data* data)
+{
+	int sock;
+	struct sockaddr_in serv_addr;
+	struct ifreq ifr;
+
+	// Create socket
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return -1;
+	}
+
+	// Set the interface to use
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	ifr.ifr_addr.sa_family = AF_INET;
+	if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, (char *)&ifr, sizeof(ifr)) < 0) {
+		perror("setsockopt");
+		return -1;
+	}
+
+	// Set the server address
+	memset(&serv_addr, 0, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = inet_addr("224.0.23.12");
+	serv_addr.sin_port = htons(3671);
+
+	// Send the request
+	unsigned char request[KNX_GROUP_ADDR_LEN + 1];
+	request[0] = 0x11; // Read request
+	memcpy(&request[1], addr, KNX_GROUP_ADDR_LEN); // Group Address
+	if (sendto(sock, request, KNX_GROUP_ADDR_LEN + 1, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+		perror("sendto");
+		return -1;
+	}
+
+	// Receive the response
+	unsigned char response[KNX_TP1_MSG_LEN];
+	int bytes = recvfrom(sock, response, KNX_TP1_MSG_LEN, 0, NULL, NULL);
+	if (bytes < 0) {
+		perror("recvfrom");
+		return -1;
+	}
+
+	// Store the data
+	memcpy(data->data, response, KNX_TP1_MSG_LEN);
+
+	// Close the socket
+	close(sock);
+
+	return 0;
+}

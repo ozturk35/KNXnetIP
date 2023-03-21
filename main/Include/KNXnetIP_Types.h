@@ -87,27 +87,6 @@ typedef struct {
     uint8_t * HostProtocolDataPtr;
 } KNXnetIP_HPAIFrameType;
 
-typedef struct {
-    uint8_t  ControlField;
-    uint16_t SourceAddress;
-    uint16_t DestinationAddress;
-    uint16_t AddrType_NPCILen;
-    uint16_t xPCI_data;
-    uint8_t * data;
-    uint8_t  FrameCheck;
-} KNXnetIP_LPduType;
-
-typedef struct {
-    uint8_t SubnetworkAddr;
-    uint8_t DeviceAddr;
-} KNXnetIP_IndividualAddrType;
-
-typedef struct {
-    uint8_t MainGroup;
-    uint8_t MiddleGroup;
-    uint8_t SubGroup;
-} KNXnetIP_GroupAddressType;
-
 /*==================[external function declarations]========================*/
 
 /*==================[internal function declarations]========================*/

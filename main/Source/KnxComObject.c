@@ -1,9 +1,9 @@
 /**
- * \file KNXnetIP_Test.c
+ * \file KnxComObject.c
  * 
- * \brief KNX IP Network Test Code
+ * \brief KNX Object
  * 
- * This file contains the implementation of KNX module IP Network Test.
+ * This file contains the implementation of Knx ComObject module
  * 
  * \version 1.0.0
  * 
@@ -13,17 +13,15 @@
  * All rights exclusively reserved for Ibrahim Ozturk,
  * unless expressly agreed to otherwise.
 */
-
 /*==================[inclusions]============================================*/
-#include "KNXnetIP_Api.h"
-#include "KNXnetIP_Cfg.h"
+
+#include "KnxComObject.h"
 
 /*==================[macros]================================================*/
 
 /*==================[type definitions]======================================*/
 
 /*==================[external function declarations]========================*/
-void KNXnetIP_Test(void);
 
 /*==================[internal function declarations]========================*/
 
@@ -37,14 +35,11 @@ void KNXnetIP_Test(void);
 
 /*==================[external function definitions]=========================*/
 
-/*==================[internal function definitions]=========================*/
-
-void KNXnetIP_Test(void)
+void KnxComObject_CopyToTelegram(KnxComObject_Type * src, KnxTelegram_Type * dst)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    dst->priority = src->priority;
+    dst->targetAddress = src->address;
+    dst->payloadLength = src->length;
 }
-
 
 /*==================[end of file]===========================================*/
