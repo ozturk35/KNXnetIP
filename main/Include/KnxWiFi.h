@@ -1,9 +1,9 @@
 /**
- * \file KNXnetIP_Test.c
+ * \file KnxWiFi.h
  * 
- * \brief KNX IP Network Test Code
+ * \brief Knx WiFi
  * 
- * This file contains the implementation of KNX module IP Network Test.
+ * This file contains the implementation of Knx WiFi
  * 
  * \version 1.0.0
  * 
@@ -14,20 +14,29 @@
  * unless expressly agreed to otherwise.
 */
 
+#ifndef KNXWIFI_H
+#define KNXWIFI_H
+
 /*==================[inclusions]============================================*/
-#include "KNXnetIP_Api.h"
-#include "KNXnetIP_Cfg.h"
 
 /*==================[macros]================================================*/
 
+#define ESP_WIFI_SSID      "KNXnetIP Interface"
+#define ESP_WIFI_PASS      "040ADA47778E24C"
+#define ESP_WIFI_CHANNEL   11U
+#define MAX_STA_CONN       1U
+
 /*==================[type definitions]======================================*/
 
+
 /*==================[external function declarations]========================*/
-void KNXnetIP_Test(void);
+extern void wifi_init_softap(void);
 
 /*==================[internal function declarations]========================*/
 
 /*==================[external constants]====================================*/
+
+/*------------------[version constants definition]--------------------------*/
 
 /*==================[internal constants]====================================*/
 
@@ -39,13 +48,6 @@ void KNXnetIP_Test(void);
 
 /*==================[internal function definitions]=========================*/
 
-void KNXnetIP_Test(void)
-{
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    
-}
-
-
 /*==================[end of file]===========================================*/
+
+#endif /* ifndef KNXWIFI_H */

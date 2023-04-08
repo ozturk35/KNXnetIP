@@ -1,19 +1,19 @@
 /* Port Configuration */
 
-#define WS2812_LED   (GPIO3)
+#define WS2812_LED   (GPIO_NUM_3)
 
-#define TRSW         (GPIO8)
+#define TRSW         (GPIO_NUM_8)
 
-#define RX_TPUART2    (GPIO17)
-#define TX_TPUART2    (GPIO18)
+#define RX_TPUART2    (GPIO_NUM_17)
+#define TX_TPUART2    (GPIO_NUM_18)
 
-#define RESET_TPUART (GPIO42)
-#define SAVE_TPUART  (GPIO41)
+#define RESET_TPUART (GPIO_NUM_42)
+#define SAVE_TPUART  (GPIO_NUM_41)
 
 /* W5500 SPI-ETH Pins */
-#define PHY_RST (4)
-#define PHY_INT (5)
-#define MOSI    (6)
-#define MISO    (7)
-#define SCLK    (8)
-#define PHY_CS  (9)
+#define W5500_PHY_RST (4U)
+#define W5500_PHY_INT (5U)
+#define W5500_MOSI    (6U)
+#define W5500_MISO    (7U)
+#define W5500_SCLK    (8U)
+#define W5500_PHY_CS  (9U)

@@ -110,22 +110,6 @@ typedef enum {
     KNX_DESC_NOT_USED             = 0xFFU,
 } KNXnetIP_DescType;
 
-/* KNX medium codes */
-typedef enum {
-    /* reserved 01h */
-    KNX_MEDIUM_TP1       = 0x02U,
-    KNX_MEDIUM_PL110     = 0x04U,
-    /* reserved 08h */
-    KNX_MEDIUM_RF        = 0x10U,
-    KNX_MEDIUM_IP        = 0x20U,
-} KNXnetIP_MediumType;
-
-/* Host protocol codes */
-typedef enum {
-    KNX_HOSTPROTOCOL_IPV4_UDP = 0x01U,
-    KNX_HOSTPROTOCOL_IPV4_TCP = 0x02U,
-} KNXnetIP_HostProtocolType;
-
 typedef enum {
     KNX_COMMAND_READ            = 0x00U,
     KNX_COMMAND_ANSWER          = 0x01U,
@@ -145,157 +129,11 @@ typedef enum {
     KXN_COMMAND_ESCAPE          = 0x0FU,
 } KNXnetIP_CommandType;
 
-/* Error codes */
-/* Common error codes */
-typedef enum {
-    E_NO_ERROR              = (0x00U), /* Operation successful */
-    E_HOST_PROTOCOL_TYPE    = (0x01U), /* The requested host protocol is not supported by the KNXnet/IP device. */
-    E_VERSION_NOT_SUPPORTED = (0x02U), /* The requested protocol version is not supported by the KNXnet/IP device. */
-    E_SEQUENCE_NUMBER       = (0x04U), /* The received sequence number is out of order. */
-} KNXnetIP_CommonErrorCodeType;
-
-/* CONNECT RESPONSE status codes */
-typedef enum {
-    E_NO_ERROR            = (0x00U),
-    E_CONNECTION_TYPE     = (0x22U), /* The KNXnet/IP Server device does not support the requested connection type. */
-    E_CONNECTION_OPTION   = (0x23U), /* The KNXnet/IP Server device does not support one or more requested connection options. */
-    E_NO_MORE_CONNECTIONS = (0x24U), /* The KNXnet/IP Server device cannot accept the new data connection because its maximum amount of concurrent connections is already used. */
-} KNXnetIP_ConnectResponseStatusCodeType;
-
-/* CONNECTIONSTATE_RESPONSE status codes */
-typedef enum {
-    E_CONNECTION_ID   = (0x21U), /* The KNXnet/IP Server device cannot find an active data connection with the specified ID. */
-    E_DATA_CONNECTION = (0x26U), /* The KNXnet/IP Server device detects an error concerning the data connection with the specified ID. */
-    E_KNX_CONNECTION  = (0x27U), /* The KNXnet/IP Server device detects an error concerning the KNX connection with the specified ID. */
-} KNXnetIP_ConnectionStateResponseStatusCodeType;
-
 typedef enum {
     KNX_CEMI_MSG_DATA_REQ = 0x11U,
     KNX_CEMI_MSG_DATA_IND = 0x29U,
     KNX_CEMI_MSG_DATA_CON = 0x2EU,
 } KNXnetIP_CEMIMsgType;
-
-typedef uint8_t KNXnetIP_HeaderLengthType;
-typedef uint8_t KNXnetIP_ProtocolVersionType;
-typedef uint8_t KNXnetIP_HeaderLenghtType;
-typedef uint8_t KNXnetIP_HeaderLenghtType;
-
-/**
-  * KNXnet/IP header binary format
-
-    +-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+
-    | Header Length                 | Protocol Version              |
-    | (1 Octet)                     | (1 Octet)                     |
-    +-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+
-    | Service Type Identifier                                       |
-    | (2 Octet)                                                     |
-    +-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+
-    | Total Length                                                  |
-    | (2 Octet)                                                     |
-    +-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+-7-+-6-+-5-+-4-+-3-+-2-+-1-+-0-+
-*/
-typedef struct {
-    KNXnetIP_HeaderLengthType    KNXnetIP_HeaderLength;
-    KNXnetIP_ProtocolVersionType KNXnetIP_ProtocolVersion;
-    KNXnetIP_ServiceType         KNXnetIP_Service;
-    unsigned int                 KNXnetIP_TotalLenght;
-} KNXnetIP_HeaderType;
-
-typedef unsigned char KNXnetIP_BodyType;
-
-typedef struct 
-{
-    KNXnetIP_HeaderType KNXnetIP_Header;
-    KNXnetIP_BodyType * KNXnetIP_Body;
-
-} KNXnetIP_FrameType1;
-
-// KNXnetIP Frame Structure
-typedef struct {
-    unsigned char  Header_Length;
-    unsigned char  Protocol_Version;
-    unsigned short Service_Type;
-    unsigned short Total_Length;
-    unsigned short Connection_Type;
-    unsigned short Connection_ID;
-    unsigned char  Data[0xFF];
-
-} KNXnetIP_FrameType;
-
-typedef struct {
-    uint8_t StructureLength;
-    uint8_t HostProtocolCode;
-    uint8_t * HostProtocolDataPtr;
-} KNXnetIP_HPAIFrameType;
-
-typedef struct {
-    uint8_t StructureLength;
-    uint8_t ConnectionTypeCode;
-    uint8_t * HostProtocolDataPtr;
-} KNXnetIP_CRIFrameType;
-
-typedef struct {
-    uint8_t StructureLength;
-    uint8_t ConnectionTypeCode;
-    uint8_t * HostProtocolIndepDataPtr;
-    uint8_t * HostProtocolDepDataPtr;
-} KNXnetIP_CRDFrameType;
-
-typedef struct {
-    uint8_t StructureLength;
-    uint8_t DescriptionTypeCode;
-    KNXnetIP_MediumType KNXnetIP_Medium;
-    uint8_t KNXnetIP_DeviceStatus;
-    uint16_t KNXnetIP_IndividualAddr;
-    uint16_t KNXnetIP_ProjectInstallationId;
-    uint8_t KNXnetIP_SerialNumber[6];
-    uint8_t KNXnetIP_RoutingMulticastAddr[6];
-    uint8_t KNXnetIP_MACAddr[6];
-    uint8_t KNXnetIP_FriendlyName[30];
-} KNXnetIP_DeviceInfoIBFrameType;
-
-typedef struct {
-    uint8_t ServiceFamilyId;
-    uint8_t ServiceFamilyVersion;
-} KNXnetIP_ServiceFamilyType;
-
-typedef struct {
-    uint8_t StructureLength;
-    uint8_t DescriptionTypeCode;
-    KNXnetIP_ServiceFamilyType * SupportedServiceFamilies;
-} KNXnetIP_SupportedServiceFamilyType;
-
-typedef struct {
-    uint8_t  ControlField;
-    uint16_t SourceAddress;
-    uint16_t DestinationAddress;
-    uint16_t AddrType_NPCILen;
-    uint16_t xPCI_data;
-    uint8_t * data;
-    uint8_t  FrameCheck;
-} KNXnetIP_LPduType;
-
-typedef struct {
-    uint8_t SubnetworkAddr;
-    uint8_t DeviceAddr;
-} KNXnetIP_IndividualAddrType;
-
-typedef uint16_t KNXnetIP_GroupAddressType;
-
-typedef unsigned char (* KNXnetIP_ReqFpType)
-(
-    uint8_t ack_request,
-    uint8_t address_type,
-    uint8_t destination_address,
-    uint8_t frame_format,
-    uint8_t lsdu,
-    uint8_t octet_count,
-    uint8_t priority,
-    uint8_t source_address
-);
-
-typedef struct {
-} KNXnetIP_LDataServiceType;
 
 /*==================[external function declarations]========================*/
 

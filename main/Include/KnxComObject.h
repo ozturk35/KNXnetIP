@@ -2,7 +2,7 @@
 #ifndef KNXCOMOBJECT_H
 #define KNXCOMOBJECT_H
 
-#include "Std_Types.h"
+#include "KnxTelegram.h"
 
 #define KNXCOMOBJ_C_FLAG	(0x20U) /* Communication Flag (C) */ 
 #define KNXCOMOBJ_R_FLAG	(0x10U) /* Read Flag (R) */ 
@@ -16,12 +16,12 @@
 
 
 typedef struct {
-    uint16_t address;
-    uint8_t datapointId;
-    uint8_t behaviorFlag;
+    uint16_t addr;
+    uint8_t dptId;
+    uint8_t indicators;
     uint8_t length;
     uint8_t priority;
-    boolean validity;
+    bool valid;
     uint8_t * value;
 } KnxComObject_Type;
 

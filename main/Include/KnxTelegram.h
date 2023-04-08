@@ -97,17 +97,17 @@
 
 /*==================[type definitions]======================================*/
 typedef enum {
-  KNX_PRIORITY_SYSTEM_VALUE  = 0x00U,
-  KNX_PRIORITY_HIGH_VALUE    = 0x04U,
-  KNX_PRIORITY_ALARM_VALUE   = 0x08U,
-  KNX_PRIORITY_NORMAL_VALUE  = 0x0CU
+    KNX_PRIORITY_SYSTEM_VALUE  = 0x00U,
+    KNX_PRIORITY_HIGH_VALUE    = 0x04U,
+    KNX_PRIORITY_ALARM_VALUE   = 0x08U,
+    KNX_PRIORITY_NORMAL_VALUE  = 0x0CU
 } Knx_PriorityType;
 
 typedef enum {
-  KNX_COMMAND_VALUE_READ     = 0x00U,
-  KNX_COMMAND_VALUE_RESPONSE = 0x01U,
-  KNX_COMMAND_VALUE_WRITE    = 0x02U,
-  KNX_COMMAND_MEMORY_WRITE   = 0x0AU,
+    KNX_COMMAND_VALUE_READ     = 0x00U,
+    KNX_COMMAND_VALUE_RESPONSE = 0x01U,
+    KNX_COMMAND_VALUE_WRITE    = 0x02U,
+    KNX_COMMAND_MEMORY_WRITE   = 0x0AU,
 } Knx_CommandType;
 
 typedef enum {
@@ -135,7 +135,6 @@ typedef struct{
 } KnxTelegram_Type;
 
 /*==================[external function declarations]========================*/
-
 void GetCommand(KnxTelegram_Type * telegram, Knx_CommandType * cmd);
 void SetCommand(KnxTelegram_Type * telegram, Knx_CommandType cmd);
 
@@ -168,6 +167,6 @@ KnxTelegram_ValidityType KnxTelegram_GetValidity(KnxTelegram_Type * telegram);
 
 /*==================[internal function definitions]=========================*/
 
-#endif // KNXTELEGRAM_H
+#endif /* #ifndef KNXTELEGRAM_H */
 
 /*==================[end of file]===========================================*/

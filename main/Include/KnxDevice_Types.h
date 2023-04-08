@@ -8,14 +8,18 @@
 #include "KnxTelegram.h"
 #include "KnxTpUart2.h"
 
-/*==================[macros]================================================*/
-#define ACTIONS_QUEUE_SIZE 16
-
 typedef enum {
   KNX_DEVICE_OK = 0U,
   KNX_DEVICE_NOT_IMPLEMENTED = 254U,
   KNX_DEVICE_ERROR = 255U
 } KnxDevice_StatusType;
+
+typedef enum {
+  Knx_TP1 = 0x00U,
+  Knx_PL110 = 0x01U,
+  Knx_RF = 0x02U,
+  Knx_IP = 0x05,
+} DptMediumType;
 
 typedef enum {
   INIT,
@@ -44,18 +48,19 @@ typedef struct {
 
 /* Knx Device Struct */
 typedef struct {
-    KnxComObjectType comObjectList[];
+    KnxComObject_Type * comObjectList;
     uint8_t comObjectsNb;
     KnxDevice_StateType state;
-    KnxTpUart2Type * tpuart;
-    uint8_t * txCmdList;
-    boolean initCompleted;
+    KnxTpUart2_CfgType * cfg;
+    Knx_TxActionType * txCmdList;
+    uint8_t txCmdLastIndex;
+    bool initCompleted;
     uint8_t initIndex;
     uint16_t lastInitTimeMs;
     uint16_t lastRxTimeUs;
     uint16_t lastTxTimeUs;
-    KnxTelegramType txTelegram;
-    KnxTelegramType rxTelegram;
+    KnxTelegram_Type txTelegram;
+    KnxTelegram_Type rxTelegram;
 } KnxDeviceType;
 
 /*==================[external function declarations]========================*/

@@ -15,18 +15,75 @@
 */
 /*==================[inclusions]============================================*/
 
+#include "KnxTpUart2.h"
+#include "KnxTpUart2_Services.h"
 #include "KnxDevice.h"
 
-uint8_t KnxDevice_CmdBuffer[64] = { 0 };
+void KnxDevice_Task(KnxDeviceType * device)
+{
+  Knx_TxActionType action;
+  uint16_t nowTimeMs, nowTimeUs;
 
-static inline uint16_t TimeDelta(uint16_t now, uint16_t before) { return (uint16_t)(now - before); }
+  if(FALSE == device->initCompleted)
+  {
+    nowTimeMs = KnxTpUart2_GetTimeMs();
 
-/* Create a Knx Device */
-KnxDeviceType KnxDevice = {
-  .state = INIT,
-  .tpuart = NULL,
-  .txCmdList = &KnxDevice_CmdBuffer[0],
-  .initCompleted = FALSE,
-  .initIndex = 0,
-  .rxTelegram = (uint8_t) NULL,
-};
+    if ((nowTimeMs - device->lastInitTimeMs) > 500)
+    {
+      while ((device->initIndex < device->comObjectsNb) && (device->comObjectList[device->initIndex].valid))
+      {
+        device->initIndex++;
+      };
+
+      if (device->initIndex == device->comObjectsNb)
+      {
+        device->initCompleted = TRUE;
+      }
+      else
+      {
+        action.ctrlField = A_GroupValue_Read;
+        action.index = device->initIndex;
+        device->txCmdList[device->txCmdLastIndex] = action;
+        device->txCmdLastIndex++;
+        device->lastInitTimeMs = KnxTpUart2_GetTimeMs();
+      }
+    }
+  }
+
+  nowTimeUs = KnxTpUart2_GetTimeUs();
+  if (nowTimeUs - device->lastRxTimeUs > 400)
+  {
+    device->lastRxTimeUs = nowTimeUs;
+    KnxTpUart2_Rx(device->cfg);
+  }
+
+  if ( IDLE == device->state)
+  {
+    if (device->txCmdLastIndex > 0)
+    {
+      switch (device->txCmdList->ctrlField)
+      {
+        case A_GroupValue_Read:
+          device->txTelegram.l_data.controlField &= ~CONTROL_FIELD_PRIORITY_MASK;
+          device->txTelegram.l_data.controlField |= KNX_PRIORITY_NORMAL_VALUE & CONTROL_FIELD_PRIORITY_MASK;
+          device->txTelegram.l_data.sourceAddr = 
+          device->txTelegram.l_data.destAddr = device->comObjectList[device->txCmdList->index].addr;
+          device->txTelegram.l_data.length = device->comObjectList[device->txCmdList->index].length;
+          device->txTelegram.l_data.cmd = KNX_COMMAND_VALUE_READ;
+          KnxTelegram_UpdateChecksum(&(device->txTelegram));
+          KnxTpUart2_SendTelegram(device->cfg->objCfg, &(device->txTelegram));
+        case A_GroupValue_Response:
+        case A_GroupValue_Write:
+        default:
+          break;
+      }
+    }
+  }
+
+  nowTimeUs = KnxTpUart2_GetTimeUs();
+  if ((nowTimeUs - device->lastTxTimeUs) > 800)
+  {
+    device->lastTxTimeUs = nowTimeUs;
+    KnxTpUart2_Tx(device->cfg);
+  }
+}

@@ -88,7 +88,6 @@ uint8_t KnxTelegram_GetChecksum(KnxTelegram_Type * telegram)
   return telegram->l_data.payloadChecksum[(telegram->l_data.length & LENGTH_FIELD_PAYLOAD_LENGTH_MASK) - 1];
 }
 
-
 uint8_t KnxTelegram_CalculateChecksum(KnxTelegram_Type * telegram)
 {
   uint8_t indexChecksum, xorSum = 0;

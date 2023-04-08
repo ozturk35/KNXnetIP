@@ -19,12 +19,15 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "sys/time.h"
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
+#include "esp_timer.h"
 #include "KnxTpUart2_Services.h"
 
 /*==================[macros]================================================*/
+#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
 
 /*==================[type definitions]======================================*/
 
@@ -38,7 +41,6 @@ UartReq_ReturnType KnxTpUart2_U_ResetBusyMode(void);
 UartReq_ReturnType KnxTpUart2_U_SetAddress(uint16_t physicalAddr);
 UartReq_ReturnType KnxTpUart2_U_AckInformation(uint8_t nack, uint8_t busy, uint8_t addr);
 UartReq_ReturnType KnxTpUart2_U_L_DataStart(uint8_t eibCtrl);
-UartReq_ReturnType KnxTpUart2_U_L_DataStart(uint8_t eibCtrl);
 UartReq_ReturnType KnxTpUart2_U_L_DataContinue(uint8_t index, uint8_t eibData);
 UartReq_ReturnType KnxTpUart2_U_L_DataEnd(uint8_t length, uint8_t chksum);
 UartReq_ReturnType KnxTpUart2_U_MxRstCnt(uint8_t busyCnt, uint8_t nackCnt);
@@ -46,9 +48,10 @@ UartReq_ReturnType KnxTpUart2_U_ActivateCRC(void);
 UartReq_ReturnType KnxTpUart2_U_PollingState(uint8_t slotnumber, uint16_t pollAddr, uint8_t pollState);
 
 int64_t KnxTpUart2_GetTimeMs();
+int64_t KnxTpUart2_GetTimeUs();
 
 /*==================[internal function declarations]========================*/
-UartReq_ReturnType KnxTpUart2_Transmit(const char * serviceName, const char * data);
+static UartReq_ReturnType KnxTpUart2_Transmit(const char * serviceName, const void * data, size_t size);
 
 /*==================[external constants]====================================*/
 
@@ -61,140 +64,140 @@ UartReq_ReturnType KnxTpUart2_Transmit(const char * serviceName, const char * da
 /*==================[external function definitions]=========================*/
 UartReq_ReturnType KnxTpUart2_U_ResetRequest(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_RESET_REQUEST,
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_RESET_REQUEST", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_RESET_REQUEST", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_StateRequest(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_STATE_REQUEST,
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_STATE_REQUEST", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_STATE_REQUEST", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_ActiveBusmon(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_ACTIVEBUSMON,
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_ACTIVEBUSMON", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_ACTIVEBUSMON", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_ProductIdRequest(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_PRODUCTID_REQUSET,
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_PRODUCTID_REQUSET", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_PRODUCTID_REQUSET", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_ActivateBusyMode(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_ACTIVATEBUSYMODE,
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_ACTIVATEBUSYMODE", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_ACTIVATEBUSYMODE", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_ResetBusyMode(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_RESETBUSYMODE,
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_RESETBUSYMODE", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_RESETBUSYMODE", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_SetAddress(uint16_t physicalAddr)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_SETADDRESS,
         (physicalAddr >> 8) & 0xFFU,
         (physicalAddr & 0xFFU)
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_SETADDRESS", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_SETADDRESS", cmd, 3U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_AckInformation(uint8_t nack, uint8_t busy, uint8_t addr)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_ACKINFORMATION |
         ((nack & 0x01) << 2) |
         ((busy & 0x01) << 1) |
         (addr & 0x01)
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_ACKINFORMATION", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_ACKINFORMATION", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_L_DataStart(uint8_t eibCtrl)
 {
-    uint8_t cmd = {
-        TPUART2_U_L_DATASTART,
-        eibCtrl
+    const char cmd[2] = {
+        (char)TPUART2_U_L_DATASTART,
+        (char)eibCtrl
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_L_DATASTART", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_L_DATASTART", cmd, 2U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_L_DataContinue(uint8_t index, uint8_t eibData)
 {
-    uint8_t cmd[] = {
-        TPUART2_U_L_DATACONTINUE | (index & 0x3FU),
-        eibData
+    const char cmd[2] = {
+        (char)TPUART2_U_L_DATACONTINUE | (index & 0x3FU),
+        (char)eibData
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_L_DATACONTINUE", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_L_DATACONTINUE", cmd, 2U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_L_DataEnd(uint8_t length, uint8_t chksum)
 {
-    uint8_t cmd[] = {
-        TPUART2_U_L_DATAEND | (length & 0x3FU),
-        chksum
+    const char cmd[2] = {
+        (char)TPUART2_U_L_DATAEND | (length & 0x3FU),
+        (char)chksum
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_L_DATAEND", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_L_DATAEND", cmd, 2U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_MxRstCnt(uint8_t busyCnt, uint8_t nackCnt)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_MXRSTCNT,
         ((busyCnt & 0x07U) << 5) | (nackCnt & 0x07U)
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_MXRSTCNT", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_MXRSTCNT", cmd, 2U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_ActivateCRC(void)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_ACTIVATECRC
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_ACTIVATECRC", &cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_ACTIVATECRC", cmd, 1U);
 }
 
 UartReq_ReturnType KnxTpUart2_U_PollingState(uint8_t slotnumber, uint16_t pollAddr, uint8_t pollState)
 {
-    uint8_t cmd[] = {
+    const char cmd[] = {
         TPUART2_U_POLLINGSTATE | (slotnumber & 0x0FU),
         ((pollAddr & 0xFF00U) >> 8),
         (pollAddr & 0x00FFU),
         pollState
     };
 
-    return KnxTpUart2_Transmit("TPUART2_U_POLLINGSTATE", cmd);
+    return KnxTpUart2_Transmit("TPUART2_U_POLLINGSTATE", cmd, 4U);
 }
 
 int64_t KnxTpUart2_GetTimeMs() {
@@ -202,11 +205,19 @@ int64_t KnxTpUart2_GetTimeMs() {
     gettimeofday(&tv, NULL);
     return (tv.tv_sec * 1000LL + (tv.tv_usec / 1000LL));
 }
-/*==================[internal function definitions]=========================*/
-static UartReq_ReturnType KnxTpUart2_Transmit(const char * serviceName, const char * data)
+
+int64_t KnxTpUart2_GetTimeUs()
 {
-    const int len = strlen(data);
-    const int txBytes = uart_write_bytes(UART_NUM_1, data, len);
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return ((tv.tv_sec * 1e6) + tv.tv_usec);
+}
+
+/*==================[internal function definitions]=========================*/
+static UartReq_ReturnType KnxTpUart2_Transmit(const char * serviceName, const void * data, size_t size)
+{
+    int txBytes = uart_write_bytes(UART_NUM_1, data, size);
+    uart_wait_tx_done(UART_NUM_1, portMAX_DELAY);
 
     ESP_LOGI(serviceName, "Wrote %d bytes", txBytes);
 

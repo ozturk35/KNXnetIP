@@ -18,6 +18,7 @@
 #define KNXTPUART2_SERVICES_H
 
 /*==================[inclusions]============================================*/
+#include "esp_system.h"
 
 /*==================[macros]================================================*/
 /* Services to UART */
@@ -34,7 +35,7 @@
 #define TPUART2_U_SETADDRESS           (0x28U)
 
 #define TPUART2_U_L_DATASTART          (0x80U)
-#define TPUART2_U_L_DATACONTINUE       (0x81U) /* +index [1..62] */
+#define TPUART2_U_L_DATACONTINUE       (0x80U) /* +index [1..62] */
 #define TPUART2_U_L_DATAEND            (0x40U) /* +length [7..63] */
 #define TPUART2_U_POLLINGSTATE         (0xE0U) /* +Slotnumber [0..14] */
 
@@ -45,6 +46,9 @@
 
 #define TPUART2_RESETINDICATION        (0x03U)
 #define TPUART2_STATEINDICATION        (0x07U)
+#define TPUART2_DATACONFIRMSUCCESS     (0x8BU)
+#define TPUART2_DATACONFIRMFAIL        (0x0BU)
+#define TPUART2_STATE_INDICATION_MASK  (0x07U)
 
 /*==================[type definitions]======================================*/
 typedef int UartReq_ReturnType;
@@ -59,7 +63,6 @@ extern UartReq_ReturnType KnxTpUart2_U_ResetBusyMode(void);
 extern UartReq_ReturnType KnxTpUart2_U_SetAddress(uint16_t physicalAddr);
 extern UartReq_ReturnType KnxTpUart2_U_AckInformation(uint8_t nack, uint8_t busy, uint8_t addr);
 extern UartReq_ReturnType KnxTpUart2_U_L_DataStart(uint8_t eibCtrl);
-extern UartReq_ReturnType KnxTpUart2_U_L_DataStart(uint8_t eibCtrl);
 extern UartReq_ReturnType KnxTpUart2_U_L_DataContinue(uint8_t index, uint8_t eibData);
 extern UartReq_ReturnType KnxTpUart2_U_L_DataEnd(uint8_t length, uint8_t chksum);
 extern UartReq_ReturnType KnxTpUart2_U_MxRstCnt(uint8_t busyCnt, uint8_t nackCnt);
@@ -67,6 +70,7 @@ extern UartReq_ReturnType KnxTpUart2_U_ActivateCRC(void);
 extern UartReq_ReturnType KnxTpUart2_U_PollingState(uint8_t slotnumber, uint16_t pollAddr, uint8_t pollState);
 
 extern int64_t KnxTpUart2_GetTimeMs();
+extern int64_t KnxTpUart2_GetTimeUs();
 
 /*==================[internal function declarations]========================*/
 
@@ -84,6 +88,6 @@ extern int64_t KnxTpUart2_GetTimeMs();
 
 /*==================[internal function definitions]=========================*/
 
-/*==================[end of file]===========================================*/
-
 #endif /* #ifndef KNXTPUART2_SERVICES_H */
+
+/*==================[end of file]===========================================*/

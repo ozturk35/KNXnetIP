@@ -25,6 +25,8 @@
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
+#include "KnxTelegram.h"
+#include "KnxComObject.h"
 
 /*==================[macros]================================================*/
 
@@ -51,6 +53,13 @@ typedef enum {
     EVENT_EIB_TELEGRAM_RECEPTION_ERR,
     EVENT_STATEINDICATION
 } KnxTpUart2_EventType;
+
+typedef enum {
+    ACK_RESPONSE = 0,
+    NACK_RESPONSE,
+    NO_ANSWER_TIMEOUT,
+    TPUART2_RESET_RESPONSE
+} KnxTpUart2_AckType;
 
 typedef void (*KnxTpUart2_EventCbkFctPtrType) (KnxTpUart2_EventType);
 
@@ -107,9 +116,9 @@ typedef struct {
     uint8_t dptId;
     uint8_t indicator;
     uint8_t length;
-    boolean validity;
-    uint8_t * value
-} KnxTpUart2_ComObjectTpye;
+    bool validity;
+    uint8_t * value;
+} KnxTpUart2_ComObjectType;
 
 typedef struct {
     uint16_t physicalAddr;
@@ -117,7 +126,7 @@ typedef struct {
     KnxTpUart2_RxType rx;
     KnxTpUart2_TxType tx;
     KnxTpUart2_EventCbkFctPtrType eventCbkFctPtr;
-    KnxTpUart2_ComObjectTpye * comObjectList;
+    KnxTpUart2_ComObjectType * comObjectList;
     uint8_t assignedComObjNb;
     uint8_t * orderedIndexTable;
     uint8_t stateIndication;
@@ -125,7 +134,7 @@ typedef struct {
 
 typedef struct {
     uart_port_t uartPort;
-    uart_config_t * uartConfig;
+    const uart_config_t * uartConfig;
     uint16_t physicalAddr;
     uint8_t txdPin;
     uint8_t rxdPin;
@@ -140,6 +149,13 @@ typedef struct {
 } KnxTpUart2_CfgType;
 
 /*==================[external function declarations]========================*/
+extern KnxTpUart2_ObjectType KnxTpUart2_Create(KnxTpUart2_CfgType * cfgPtr);
+extern void KnxTpUart2_Main(void);
+extern void KnxTpUart2_Rx(KnxTpUart2_CfgType * cfgPtr);
+extern void KnxTpUart2_Tx(KnxTpUart2_CfgType * cfgPtr);
+extern void KnxTpUart2_Main(void);
+extern uint8_t KnxTpUart2_Reset(KnxTpUart2_CfgType * cfgPtr);
+extern uint8_t KnxTpUart2_SendTelegram(KnxTpUart2_ObjectType * objCfg, KnxTelegram_Type * telegram);
 
 /*==================[internal function declarations]========================*/
 
