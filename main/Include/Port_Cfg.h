@@ -11,9 +11,9 @@
 #define SAVE_TPUART  (GPIO_NUM_41)
 
 /* W5500 SPI-ETH Pins */
-#define W5500_PHY_RST (4U)
-#define W5500_PHY_INT (5U)
-#define W5500_MOSI    (6U)
-#define W5500_MISO    (7U)
-#define W5500_SCLK    (8U)
-#define W5500_PHY_CS  (9U)
+#define ETH_SPI_PHY_RST_GPIO (GPIO_NUM_4)
+#define ETH_SPI_INT_GPIO     (GPIO_NUM_5)
+#define ETH_SPI_MOSI_GPIO    (GPIO_NUM_6)
+#define ETH_SPI_MISO_GPIO    (GPIO_NUM_7)
+#define ETH_SPI_SCLK_GPIO    (GPIO_NUM_15)
+#define ETH_SPI_CS_GPIO      (GPIO_NUM_16)

@@ -1,21 +1,22 @@
-#include "Pdu.h"
-#include "Knx_Types.h"
-#include "Knx_DataLinkLayer.h"
-#include "TpUart2_DataLinkLayer.h"
-#include "KnxTpUart2_Services.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "string.h"
 #include "esp_system.h"
 #include "esp_log.h"
 
+#include "Pdu.h"
+#include "Knx_Types.h"
+#include "KNXnetIP_Tunnelling.h"
+#include "TP_DataLinkLayer.h"
+#include "TpUart2_DataLinkLayer.h"
+#include "KnxTpUart2_Services.h"
+
 static uint8_t TpUart2_TxBuffer[64];
-static uint8_t TpUart2_RxBuffer[64];
+//static uint8_t TpUart2_RxBuffer[64];
 
 void TpUart2_L_Data_Req(bool repeatFlag, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr);
 void TpUart2_L_Data_Con(void);
-void TpUart2_L_Data_Ind(bool repeatFlag, uint16_t sourceAddr, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr);
+void TpUart2_L_Data_Ind(PduInfoType * pduInfoPtr);
 
 void TpUart2_L_Data_Req(bool repeatFlag, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr)
 {
@@ -51,7 +52,7 @@ void TpUart2_L_Data_Con()
 
 }
 
-void TpUart2_L_Data_Ind(bool repeatFlag, uint16_t sourceAddr, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr)
+void TpUart2_L_Data_Ind(PduInfoType * pduInfoPtr)
 {
     if (NULL == pduInfoPtr)
     {
@@ -65,8 +66,8 @@ void TpUart2_L_Data_Ind(bool repeatFlag, uint16_t sourceAddr, uint16_t destAddr,
     {
         FrameFormatType frameFormat;
         PriorityType priority;
-        uint8_t octetCount;
         bool repeatFlag;
+        uint8_t octetCount;
 
         frameFormat = (FrameFormatType)(((uint8_t)(pduInfoPtr->SduDataPtr[0]) & CTRL_FIELD_FRAME_FORMAT_MASK) >> CTRL_FIELD_FRAME_FORMAT_OFFSET);
         repeatFlag = (bool)(((uint8_t)(pduInfoPtr->SduDataPtr[0]) & CTRL_FIELD_REPEAT_FLAG_MASK) >> CTRL_FIELD_REPEAT_FLAG_OFFSET);
@@ -81,8 +82,7 @@ void TpUart2_L_Data_Ind(bool repeatFlag, uint16_t sourceAddr, uint16_t destAddr,
             octetCount = (uint8_t)(pduInfoPtr->SduDataPtr[6U]);
         }
 
-        /* Call upper layer indication */
-        L_Data_Ind(AckDontCare, addrType, destAddr, frameFormat, pduInfoPtr, octetCount, priority, sourceAddr);
-        (void)repeatFlag;
+        /* Tunnel to IP */
+        // KNXnetIP_TunnelTP2IP(pduInfoPtr);
     }
 }

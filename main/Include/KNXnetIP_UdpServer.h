@@ -21,13 +21,22 @@
 
 /*==================[macros]================================================*/
 
-#define PORT (3671U)
+#define UDP_PORT (3671U)
+
+#define MULTICAST_TTL IP_MULTICAST_TTL
+#define MULTICAST_IPV4_ADDR "224.0.23.12"
 
 /*==================[type definitions]======================================*/
 
 
 /*==================[external function declarations]========================*/
-extern void udp_server_task(void *pvParameters);
+void udp_mcast_task(void *pvParameters);
+void tcp_server_task(void *pvParameters);
+
+void KNXnetIP_UDPSend(uint32_t ipAddr, uint16_t port, uint8_t * txBuffer, uint16_t txLength);
+void KNXnetIP_TCPResponse(uint8_t * txBuffer, uint16_t txLength);
+
+extern int create_unicast_ipv4_socket(uint32_t ipAddr, uint16_t port);
 
 /*==================[internal function declarations]========================*/
 

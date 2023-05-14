@@ -15,16 +15,40 @@
 */
 
 /*==================[inclusions]============================================*/
-#include "KNXnetIP_Types.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "string.h"
+#include "esp_system.h"
+#include "esp_log.h"
+
+#include "KNXnetIP.h"
 
 /*==================[macros]================================================*/
-#define IP_ADDRESS(x,y,z,t) (uint32_t)((((uint32_t)x << 24) & 0xFF000000) | \
-                                       (((uint32_t)y << 16) & 0xFF0000) | \
-                                       (((uint32_t)z << 8) & 0xFF00) | \
-                                       ((uint32_t)t & 0xFF))
+#define IP_ADDRESS(x,y,z,t) (uint32_t)((((uint32_t)t << 24) & 0xFF000000) | \
+                                       (((uint32_t)z << 16) & 0xFF0000) | \
+                                       (((uint32_t)y << 8) & 0xFF00) | \
+                                       ((uint32_t)x & 0xFF))
+
+#define CHANNEL_1 (1U)
+#define CHANNEL_2 (2U)
+#define CHANNEL_3 (3U)
+#define CHANNEL_4 (4U)
+
+#define KNX_CHANNEL_NUM (4U)
+
+#define KNX_INDIVIDUAL_ADDR  (0x1101U)
+#define KNX_SUPPORTED_SERVICE_NUM (4U)
+#define KNX_INDIVIDUAL_ADDR_NUM (2U)
+#define KNX_TUNNELLING_SLOT_NUM (1U)
+
+#define KNX_TUNNELLING_SLOT_STATUS_FREE       (0x01U)
+#define KNX_TUNNELLING_SLOT_STATUS_AUTHORIZED (0x02U)
+#define KNX_TUNNELLING_SLOT_STATUS_USABLE     (0x04U)
+
 /*==================[type definitions]======================================*/
 
 /*==================[external function declarations]========================*/
+extern uint32_t KnxIPInterface_IpAddr;
 
 /*==================[internal function declarations]========================*/
 
@@ -33,48 +57,71 @@
 /*==================[internal constants]====================================*/
 
 /*==================[external data]=========================================*/
-
-/*==================[internal data]=========================================*/
-static const KNXnetIP_ServiceFamilyType KnxSupportedServiceFamilies[] = {
-    {KNXNETIP_CORE,             KNXNETIP_VERSION_10},
-    {KNXNETIP_DEVICEMANAGEMENT, KNXNETIP_VERSION_10},
-    {KNXNETIP_TUNNELLING,       KNXNETIP_VERSION_10}
+KNXnetIP_ChannelType KNXnetIP_Channel[KNX_CHANNEL_NUM] = {
+    {CHANNEL_1, CH_FREE},
+    {CHANNEL_2, CH_FREE},
+    {CHANNEL_3, CH_FREE},
+    {CHANNEL_4, CH_FREE},
 };
 
-static const uint8_t KnxDeviceFriendlyName[30] = {'A','T','I','O','S','-','K','N','X',' ','I','N','T','E','R','F','A','C','E','','','','','','','','','','',''};
-static const uint8_t KnxDeviceSerialNumber[6] = {0x00, 0x01, 0x11, 0x11, 0x11, 0x11};
-static const uint8_t KnxDeviceMACAddress[6] = {0x45, 0x49, 0x42, 0x6E, 0x65, 0x74};
+/*==================[internal data]=========================================*/
+static const KNXnetIP_ServiceFamilyType KnxSupportedServiceFamilies[KNX_SUPPORTED_SERVICE_NUM] = {
+    {KNXNETIP_CORE,       0x02U},
+    {KNXNETIP_DEVICEMGMT, 0x02U},
+    {KNXNETIP_TUNNELLING, 0x02U},
+    {KNXNETIP_SECURE,     0x01U},
+};
+
+static const uint16_t KNXnetIP_KnxIndividualAddresses[KNX_INDIVIDUAL_ADDR_NUM] =
+{
+    KNX_INDIVIDUAL_ADDR,
+    0x11FAU,
+};
+
+static KNXnetIP_TunnelingSlotType KNXnetIP_TunnelingSlot[KNX_TUNNELLING_SLOT_NUM] = 
+{
+    {0x11FAU, KNX_TUNNELLING_SLOT_STATUS_FREE},
+};
+
+static const uint8_t KnxDeviceFriendlyName[30] = {'A','T','I','O','S',' ','K','N','X',' ','B','R','I','D','G','E'};
+//static const uint8_t KnxDeviceSerialNumber[6] = {0x00, 0xEF, 0x26, 0x50, 0x06, 0x5C};
+static const uint8_t KnxDeviceSerialNumber[6] = {0x00U, 0x83U, 0x78U, 0x40U, 0x13U, 0x89U};
+
+static const uint8_t KnxDeviceMACAddress[6] = {0xCCU, 0x1BU, 0xE0, 0x80U, 0x96U, 0x1AU};
+static const uint32_t KnxDeviceMulticastAddr = IP_ADDRESS(224, 0, 23, 12);
+static const uint32_t KnxDeviceZeroAddr = IP_ADDRESS(0, 0, 0, 0);
+
 /*==================[external function definitions]=========================*/
 
 /*==================[internal function definitions]=========================*/
 
-void KNXnetIP_SearchResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * txBuffer, uint16_t * txLength);
-void KNXnetIP_DescriptionResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * txBuffer, uint16_t * txLength);
-void KNXnetIP_ConnectResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_SearchResponse(uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_SearchResponseExtended(uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_DescriptionResponse(uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_ConnectResponse(KNXnetIP_ErrorCodeType errorCode, KNXnetIP_HPAIType * connectRequestHpai, KNXnetIP_CRIType * cri, uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_ConnectionStateResponse(KNXnetIP_ErrorCodeType errorCode, uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_DisconnectRequest(KNXnetIP_HPAIType * disconnectRequestHpai, uint8_t * txBuffer, uint16_t * txLength );
+void KNXnetIP_DisconnectResponse(uint8_t * txBuffer, uint16_t * txLength);
 
-//void KNXnetIP_ConnectionStateResponse(void);
-//void KNXnetIP_DisconnectRequest(void);
-//void KNXnetIP_DisconnectResponse(void);
-
-void KNXnetIP_SearchResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * txBuffer, uint16_t * txLength)
+void KNXnetIP_SearchResponse(uint8_t * txBuffer, uint16_t * txLength)
 {
     uint16_t txBytes = 0;
 
-    /* HPAI - Structure Length */
+    /* HPAI Control endpoint - Structure Length */
     txBuffer[txBytes++] = 0x08U;
 
-    /* HPAI - Host Protocol Code */
+    /* HPAI Control endpoint - Host Protocol Code */
     txBuffer[txBytes++] = IPV4_UDP;
 
-    /* HPAI - IP Address of control endpoint */
-    txBuffer[txBytes++] = (uint8_t)((searchRequestHpai->ipAddress >> 24) & 0xFFU);
-    txBuffer[txBytes++] = (uint8_t)((searchRequestHpai->ipAddress >> 16) & 0xFFU);
-    txBuffer[txBytes++] = (uint8_t)((searchRequestHpai->ipAddress >> 8) & 0xFFU);
-    txBuffer[txBytes++] = (uint8_t)(searchRequestHpai->ipAddress & 0xFFU);
+    /* HPAI Control endpoint - IP Address */
+    txBuffer[txBytes++] = (uint8_t)(KnxIPInterface_IpAddr & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 16) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 24) & 0xFFU);
 
-    /* HPAI - Port Number of control endpoint */
-    txBuffer[txBytes++] = (uint8_t)((searchRequestHpai->portNumber >> 8) & 0xFFU);
-    txBuffer[txBytes++] = (uint8_t)(searchRequestHpai->portNumber & 0xFFU);
+    /* HPAI Control endpoint - Port Number */
+    txBuffer[txBytes++] = (uint8_t)((UDP_PORT >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(UDP_PORT & 0xFFU);
 
     /* DIB Device Hardware - Structure Length */
     txBuffer[txBytes++] = 0x36U;
@@ -83,25 +130,25 @@ void KNXnetIP_SearchResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * tx
     txBuffer[txBytes++] = DEVICE_INFO;
 
     /* DIB Device Hardware - KNX Medium */
-    txBuffer[txBytes++] = KNX_IP;
+    txBuffer[txBytes++] = KNX_TP1;
 
     /* DIB Device Hardware - Device Status */
-    txBuffer[txBytes++] = 0x01U; /* Programming mode */
+    txBuffer[txBytes++] = 0x00U; /* Programming mode */
 
     /* DIB Device Hardware - Individual Address */
-    txBuffer[txBytes++] = 0x10U;
-    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = (uint8_t)((KNX_INDIVIDUAL_ADDR >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(KNX_INDIVIDUAL_ADDR & 0xFFU);
 
     /* DIB Device Hardware - Project-InstallationID */
     txBuffer[txBytes++] = 0x00U;
-    txBuffer[txBytes++] = 0x11U;
+    txBuffer[txBytes++] = 0x00U;
 
     /* DIB Device Hardware - Serial Number */
     memcpy(&txBuffer[txBytes], &KnxDeviceSerialNumber[0], 6U);
     txBytes += 6;
 
     /* DIB Device Hardware - Routing Multicast Address */
-    memcpy(&txBuffer[txBytes], &IP_ADDRESS(224, 0, 23, 12), 4U);
+    memcpy(&txBuffer[txBytes], &KnxDeviceZeroAddr, 4U);
     txBytes += 4;
 
     /* DIB Device Hardware - MAC Address */
@@ -113,19 +160,221 @@ void KNXnetIP_SearchResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * tx
     txBytes += 30;
 
     /* DIB Supported Service Family - Structure Length */
-    txBuffer[txBytes++] = 0x08U;
+    txBuffer[txBytes++] = 0x0AU;
 
     /* DIB Supported Service Family - Description Type Code */
     txBuffer[txBytes++] = SUPP_SVC_FAMILIES;
 
     /* DIB Supported Service Family - Supported Service Families */
-    memcpy(&txBuffer[txBytes], &KnxSupportedServiceFamilies[0], 6U);
-    txBytes += 6;
+    for (uint8_t index = 0; index < KNX_SUPPORTED_SERVICE_NUM; index++)
+    {
+        txBuffer[txBytes++] = KnxSupportedServiceFamilies[index].ServiceFamilyId;
+        txBuffer[txBytes++] = KnxSupportedServiceFamilies[index].ServiceFamilyVersion;
+    }
 
+    /* Update Tx Length */
     *txLength = txBytes;
 }
 
-void KNXnetIP_DescriptionResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * txBuffer, uint16_t * txLength)
+void KNXnetIP_SearchResponseExtended(uint8_t * txBuffer, uint16_t * txLength)
+{
+    uint16_t txBytes = 0;
+    uint8_t index = 0;
+
+    /* HPAI Control endpoint - Structure Length */
+    txBuffer[txBytes++] = 0x08U;
+
+    /* HPAI Control endpoint - Host Protocol Code */
+    txBuffer[txBytes++] = IPV4_UDP;
+
+    /* HPAI Control endpoint - IP Address */
+    txBuffer[txBytes++] = (uint8_t)(KnxIPInterface_IpAddr & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 16) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 24) & 0xFFU);
+
+    /* HPAI Control endpoint - Port Number */
+    txBuffer[txBytes++] = (uint8_t)((UDP_PORT >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(UDP_PORT & 0xFFU);
+
+    /* DIB Device Hardware - Structure Length */
+    txBuffer[txBytes++] = 0x36U;
+
+    /* DIB Device Hardware - Description Type Code */
+    txBuffer[txBytes++] = DEVICE_INFO;
+
+    /* DIB Device Hardware - KNX Medium */
+    txBuffer[txBytes++] = KNX_TP1;
+
+    /* DIB Device Hardware - Device Status */
+    txBuffer[txBytes++] = 0x00U; /* Programming mode */
+
+    /* DIB Device Hardware - Individual Address */
+    txBuffer[txBytes++] = (uint8_t)((KNX_INDIVIDUAL_ADDR >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(KNX_INDIVIDUAL_ADDR & 0xFFU);
+
+    /* DIB Device Hardware - Project-InstallationID */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Device Hardware - Serial Number */
+    memcpy(&txBuffer[txBytes], &KnxDeviceSerialNumber[0], 6U);
+    txBytes += 6;
+
+    /* DIB Device Hardware - Routing Multicast Address */
+    memcpy(&txBuffer[txBytes], &KnxDeviceZeroAddr, 4U);
+    txBytes += 4;
+
+    /* DIB Device Hardware - MAC Address */
+    memcpy(&txBuffer[txBytes], &KnxDeviceMACAddress[0], 6U);
+    txBytes += 6;
+
+    /* DIB Device Hardware - Friendly Name */
+    memcpy(&txBuffer[txBytes], &KnxDeviceFriendlyName[0], 30);
+    txBytes += 30;
+
+    /* DIB Supported Service Family - Structure Length */
+    txBuffer[txBytes++] = 0x0AU;
+
+    /* DIB Supported Service Family - Description Type Code */
+    txBuffer[txBytes++] = SUPP_SVC_FAMILIES;
+
+    /* DIB Supported Service Family - Supported Service Families */
+    for (index = 0; index < KNX_SUPPORTED_SERVICE_NUM; index++)
+    {
+        txBuffer[txBytes++] = KnxSupportedServiceFamilies[index].ServiceFamilyId;
+        txBuffer[txBytes++] = KnxSupportedServiceFamilies[index].ServiceFamilyVersion;
+    }
+
+    /* DIB Extended Device Information - Structure Length*/
+    txBuffer[txBytes++] = 0x08U;
+
+    /* DIB Extended Deice Information - Description Type Code */
+    txBuffer[txBytes++] = EXTENDED_DEVICE_INFO;
+
+    /* DIB Extended Device Information - Medium Status */
+    /* For a KNXnet/IP Tunnelling Server on TP1,                 */
+    /* this shall be the connection state of the TP1 connection. */
+    txBuffer[txBytes++] = 0x00U; /* i.e. KnxTpUart2_GetConnectionState() */
+
+    /* DIB Extended Device Information - Reserved */
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Extended Device Information - Maximal Local APDU length */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0xF0U;
+
+    /* DIB Extended Device Information - Device Descriptor Type 0 */
+    txBuffer[txBytes++] = (uint8_t)((KNXNETIP_SYS7 >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(KNXNETIP_SYS7 & 0xFFU);
+
+    /* DIB Ip Config - Structure Length */
+    txBuffer[txBytes++] = 0x10U;
+
+    /* DIB Ip Config - Description Type Code */
+    txBuffer[txBytes++] = IP_CONFIG;
+
+    /* DIB Ip Config - IP Address */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Ip Config - Subnet Mask */
+    txBuffer[txBytes++] = 0xFFU;
+    txBuffer[txBytes++] = 0xFFU;
+    txBuffer[txBytes++] = 0xFFU;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Ip Config - Default Gateway */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Ip Config - IP Capabilities  */
+    txBuffer[txBytes++] = 0x01; /* BootP */
+
+    /* DIB Ip Config - IP Assignment */
+    txBuffer[txBytes++] = 0x04; /* DHCP */
+
+    /* DIB Current Config - Structure Length */
+    txBuffer[txBytes++] = 0x14U;
+
+    /* DIB Current Config - Description Type Code */
+    txBuffer[txBytes++] = IP_CUR_CONFIG;
+
+    /* DIB Current Config - IP Address */
+    txBuffer[txBytes++] = (uint8_t)(KnxIPInterface_IpAddr & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 16) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((KnxIPInterface_IpAddr >> 24) & 0xFFU);
+
+    /* DIB Current Config - Subnet Mask */
+    txBuffer[txBytes++] = 0xFFU;
+    txBuffer[txBytes++] = 0xFFU;
+    txBuffer[txBytes++] = 0xFFU;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Current Config - Default Gateway */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Current Config - DHCP Server */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Current Config - IP Assignment */
+    txBuffer[txBytes++] = 0x04; /* DHCP */
+
+    /* DIB Current Config - Reserved */
+    txBuffer[txBytes++] = 0x00U;
+
+    /* DIB Knx Address - Structure Length */
+    txBuffer[txBytes++] = 0x06U;
+
+    /* DIB Knx Address - Description Type Code */
+    txBuffer[txBytes++] = KNX_ADDRESSES;
+
+    /* DIB Knx Address - KNX Individual Address */
+    for (index = 0; index < KNX_INDIVIDUAL_ADDR_NUM; index++)
+    {
+        txBuffer[txBytes++] = (uint8_t)((KNXnetIP_KnxIndividualAddresses[index] >> 8) & 0xFFU);
+        txBuffer[txBytes++] = (uint8_t)(KNXnetIP_KnxIndividualAddresses[index] & 0xFFU);
+    }
+
+    /* DIB Tunnel Information - Structure Length */
+    txBuffer[txBytes++] = 0x08U;
+
+    /* DIB Tunnel Information - Description Type Code */
+    txBuffer[txBytes++] = TUNNELLING_INFO;
+
+    /* DIB Tunnel Information - Maximal Local APDU length */
+    txBuffer[txBytes++] = 0x00U;
+    txBuffer[txBytes++] = 0xF0U;
+
+    /* DIB Tunnel Information - Tunneling Slot */
+    for (index = 0; index < KNX_TUNNELLING_SLOT_NUM; index++)
+    {
+        txBuffer[txBytes++] = (uint8_t)((KNXnetIP_TunnelingSlot[index].IndvAddr >> 8) & 0xFFU);
+        txBuffer[txBytes++] = (uint8_t)(KNXnetIP_TunnelingSlot[index].IndvAddr & 0xFFU);
+
+        /* Reserved */
+        txBuffer[txBytes++] = 0x00; 
+
+        /* Slot Status */
+        txBuffer[txBytes++] = KNXnetIP_TunnelingSlot[index].SlotStatus;
+    }
+
+    /* Update Tx Length */
+    *txLength = txBytes;
+}
+
+void KNXnetIP_DescriptionResponse(uint8_t * txBuffer, uint16_t * txLength)
 {
     uint16_t txBytes = 0;
 
@@ -136,25 +385,25 @@ void KNXnetIP_DescriptionResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t
     txBuffer[txBytes++] = DEVICE_INFO;
 
     /* DIB Device Hardware - KNX Medium */
-    txBuffer[txBytes++] = KNX_IP;
+    txBuffer[txBytes++] = KNX_TP1;
 
     /* DIB Device Hardware - Device Status */
-    txBuffer[txBytes++] = 0x01U; /* Programming mode */
+    txBuffer[txBytes++] = 0x00U; /* Programming mode */
 
     /* DIB Device Hardware - Individual Address */
-    txBuffer[txBytes++] = 0x10U;
+    txBuffer[txBytes++] = 0xFFU;
     txBuffer[txBytes++] = 0x00U;
 
     /* DIB Device Hardware - Project-InstallationID */
     txBuffer[txBytes++] = 0x00U;
-    txBuffer[txBytes++] = 0x11U;
+    txBuffer[txBytes++] = 0x00U;
 
     /* DIB Device Hardware - Serial Number */
     memcpy(&txBuffer[txBytes], &KnxDeviceSerialNumber[0], 6U);
     txBytes += 6;
 
     /* DIB Device Hardware - Routing Multicast Address */
-    memcpy(&txBuffer[txBytes], &IP_ADDRESS(224, 0, 23, 12), 4U);
+    memcpy(&txBuffer[txBytes], &KnxDeviceMulticastAddr, 4U);
     txBytes += 4;
 
     /* DIB Device Hardware - MAC Address */
@@ -166,55 +415,129 @@ void KNXnetIP_DescriptionResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t
     txBytes += 30;
 
     /* DIB Supported Service Family - Structure Length */
-    txBuffer[txBytes++] = 0x08U;
+    txBuffer[txBytes++] = 0x0AU;
 
     /* DIB Supported Service Family - Description Type Code */
     txBuffer[txBytes++] = SUPP_SVC_FAMILIES;
 
     /* DIB Supported Service Family - Supported Service Families */
-    memcpy(&txBuffer[txBytes], &KnxSupportedServiceFamilies[0], 6U);
-    txBytes += 6;
+    for (uint8_t index = 0; index < KNX_SUPPORTED_SERVICE_NUM; index++)
+    {
+        txBuffer[txBytes++] = KnxSupportedServiceFamilies[index].ServiceFamilyId;
+        txBuffer[txBytes++] = KnxSupportedServiceFamilies[index].ServiceFamilyVersion;
+    }
 
-    /* DIB Other Device Information - Structure Length */
-    txBuffer[txBytes++] = 0x08U;
-
-    /* DIB Other Device Information - Description Type Code */
-    txBuffer[txBytes++] = MFR_DATA;
-
-    /* DIB Other Device Information - KNX Manufacturer ID */
-    txBuffer[txBytes++] = 0xBBU;
-    txBuffer[txBytes++] = 0xEEU;
-
-    /* DIB Other Device Information - Device Type Name */
-    txBuffer[txBytes++] = 'N';
-    txBuffer[txBytes++] = '1';
-    txBuffer[txBytes++] = '4';
-    txBuffer[txBytes++] = '6';
-
+    /* Update Tx Length */
     *txLength = txBytes;
 }
 
-void KNXnetIP_ConnectResponse(KNXnetIP_HPAIType * searchRequestHpai, uint8_t * txBuffer, uint16_t * txLength)
+void KNXnetIP_ConnectResponse(KNXnetIP_ErrorCodeType errorCode, KNXnetIP_HPAIType * connectRequestHpai, KNXnetIP_CRIType * cri, uint8_t * txBuffer, uint16_t * txLength)
 {
     uint16_t txBytes = 0;
 
     /* Communication Channel ID */
-    txBuffer[txBytes++] = 21U;
+    txBuffer[txBytes++] = KNXnetIP_Channel[0].ChannelId;
+
+    /* Status Code */
+    txBuffer[txBytes++] = errorCode;
+
+    /* HPAI Control endpoint - Structure Length */
+    txBuffer[txBytes++] = 0x08U;
+
+    /* HPAI Control endpoint - Host Protocol Code */
+    txBuffer[txBytes++] = connectRequestHpai->HostProtocolCode;
+
+    /* HPAI Control endpoint - IP Address */
+    txBuffer[txBytes++] = (uint8_t)((connectRequestHpai->ipAddress >> 24) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((connectRequestHpai->ipAddress >> 16) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((connectRequestHpai->ipAddress >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(connectRequestHpai->ipAddress & 0xFFU);
+
+    /* HPAI Control endpoint - Port Number */
+    txBuffer[txBytes++] = (uint8_t)((connectRequestHpai->portNumber >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(connectRequestHpai->portNumber & 0xFFU);
+
+    if (TUNNEL_CONNECTION == cri->ConnectionTypeCode)
+    {
+        /* CRD - Structure Length */
+        txBuffer[txBytes++] = 0x04;
+
+        /* CRD - Connection Type Code */
+        txBuffer[txBytes++] = TUNNEL_CONNECTION;
+
+        /* CRD - Individual Address */
+        txBuffer[txBytes++] = (uint8_t)((KNXnetIP_TunnelingSlot[0].IndvAddr >> 8) & 0xFFU);
+        txBuffer[txBytes++] = (uint8_t)(KNXnetIP_TunnelingSlot[0].IndvAddr & 0xFFU);
+    }
+    else if (DEVICE_MGMT_CONNECTION == cri->ConnectionTypeCode)
+    {
+        /* CRD - Structure Length */
+        txBuffer[txBytes++] = 0x02;
+
+        /* CRD - Connection Type Code */
+        txBuffer[txBytes++] = DEVICE_MGMT_CONNECTION;
+    }
+
+    /* Update Tx Length */
+    *txLength = txBytes;
+}
+
+void KNXnetIP_ConnectionStateResponse(KNXnetIP_ErrorCodeType errorCode, uint8_t * txBuffer, uint16_t * txLength)
+{
+    uint8_t txBytes = 0;
+
+    /* Communication Channel ID */
+    txBuffer[txBytes++] = KNXnetIP_Channel[0].ChannelId;
+
+    /* Status Code */
+    txBuffer[txBytes++] = errorCode;
+
+    /* Update Tx Length */
+    *txLength = txBytes;
+}
+
+void KNXnetIP_DisconnectRequest(KNXnetIP_HPAIType * disconnectRequestHpai, uint8_t * txBuffer, uint16_t * txLength)
+{
+    uint8_t txBytes = 0;
+
+    /* Communication Channel ID */
+    txBuffer[txBytes++] = KNXnetIP_Channel[0].ChannelId;
+
+    /* reserved */
+    txBuffer[txBytes++] = 0x00U;
+
+    /* HPAI Control endpoint - Structure Length */
+    txBuffer[txBytes++] = 0x08U;
+
+    /* HPAI Control endpoint - Host Protocol Code */
+    txBuffer[txBytes++] = disconnectRequestHpai->HostProtocolCode;
+
+    /* HPAI Control endpoint - IP Address */
+    txBuffer[txBytes++] = (uint8_t)((disconnectRequestHpai->ipAddress >> 24) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((disconnectRequestHpai->ipAddress >> 16) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)((disconnectRequestHpai->ipAddress >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(disconnectRequestHpai->ipAddress & 0xFFU);
+
+    /* HPAI Control endpoint - Port Number */
+    txBuffer[txBytes++] = (uint8_t)((disconnectRequestHpai->portNumber >> 8) & 0xFFU);
+    txBuffer[txBytes++] = (uint8_t)(disconnectRequestHpai->portNumber & 0xFFU);
+
+    /* Update Tx Length */
+    *txLength = txBytes;
+}
+
+void KNXnetIP_DisconnectResponse(uint8_t * txBuffer, uint16_t * txLength)
+{
+    uint8_t txBytes = 0;
+
+    /* Communication Channel ID */
+    txBuffer[txBytes++] = KNXnetIP_Channel[0].ChannelId;
 
     /* Status Code */
     txBuffer[txBytes++] = E_NO_ERROR;
 
-    /* Structure Length */
-    txBuffer[txBytes++] = 0x08U;
-
-    /* Host Protocol Code */
-    txBuffer[txBytes++] = IPV4_UDP;
-
-    /* IP Address of data endpoint */
-    txBuffer[txBytes++] =
-
-    txBuffer[txBytes++] =
-    
+    /* Update Tx Length */
+    *txLength = txBytes;
 }
 
 /*==================[end of file]===========================================*/

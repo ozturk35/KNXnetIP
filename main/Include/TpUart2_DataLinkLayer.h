@@ -6,6 +6,6 @@
 
 extern void TpUart2_L_Data_Req(bool repeatFlag, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr);
 extern void TpUart2_L_Data_Con(void);
-extern void TpUart2_L_Data_Ind(bool repeatFlag, uint16_t sourceAddr, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr);
+extern void TpUart2_L_Data_Ind(PduInfoType * pduInfoPtr);
 
 #endif /* #ifndef TPUART2_DATALINKLAYER_H */ 

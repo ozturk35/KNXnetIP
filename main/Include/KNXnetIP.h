@@ -18,6 +18,10 @@
 #define KNXNETIP_H
 
 /*==================[inclusions]============================================*/
+#include "Knx_Types.h"
+#include "KNXnetIP_Core.h"
+#include "KNXnetIP_Tunnelling.h"
+#include "KNXnetIP_UdpServer.h"
 
 /*==================[macros]================================================*/
 

@@ -134,39 +134,6 @@ typedef struct{
     };
 } KnxTelegram_Type;
 
-/*==================[external function declarations]========================*/
-void GetCommand(KnxTelegram_Type * telegram, Knx_CommandType * cmd);
-void SetCommand(KnxTelegram_Type * telegram, Knx_CommandType cmd);
-
-void KnxTelegram_Clear(KnxTelegram_Type * telegram);
-
-void KnxTelegram_GetLongPayload(KnxTelegram_Type * telegram, uint8_t * dest, uint8_t nbOfBytes);
-void KnxTelegram_SetLongPayload(KnxTelegram_Type * telegram, uint8_t * src, uint8_t nbOfBytes);
-void KnxTelegram_ClearLongPayload(KnxTelegram_Type * telegram);
-
-uint8_t KnxTelegram_GetChecksum(KnxTelegram_Type * telegram);
-uint8_t KnxTelegram_CalculateChecksum(KnxTelegram_Type * telegram);
-void KnxTelegram_UpdateChecksum(KnxTelegram_Type * telegram);
-
-void KnxTelegram_Copy(KnxTelegram_Type * dest, KnxTelegram_Type * src);
-void KnxTelegram_CopyHeader(KnxTelegram_Type * dest, KnxTelegram_Type * src);
-
-KnxTelegram_ValidityType KnxTelegram_GetValidity(KnxTelegram_Type * telegram);
-
-/*==================[internal function declarations]========================*/
-
-/*==================[external constants]====================================*/
-
-/*==================[internal constants]====================================*/
-
-/*==================[external data]=========================================*/
-
-/*==================[internal data]=========================================*/
-
-/*==================[external function definitions]=========================*/
-
-/*==================[internal function definitions]=========================*/
-
 #endif /* #ifndef KNXTELEGRAM_H */
 
 /*==================[end of file]===========================================*/

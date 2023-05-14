@@ -21,16 +21,24 @@
 
 /*==================[macros]================================================*/
 
-#define ESP_WIFI_SSID      "KNXnetIP Interface"
-#define ESP_WIFI_PASS      "040ADA47778E24C"
-#define ESP_WIFI_CHANNEL   11U
+#define ESP_WIFI_SSID      "SUPERONLINE_WiFi_6637"
+#define ESP_WIFI_PASS      "9MMUPEW3FJCL"
+#define ESP_MAXIMUM_RETRY  3
+
+#define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HUNT_AND_PECK
+#define EXAMPLE_H2E_IDENTIFIER ""
+
+#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+
+#define ESP_WIFI_CHANNEL   149U
 #define MAX_STA_CONN       1U
 
 /*==================[type definitions]======================================*/
 
 
 /*==================[external function declarations]========================*/
-extern void wifi_init_softap(void);
+void wifi_init_sta(void);
+esp_netif_t * wifi_get_netif(void);
 
 /*==================[internal function declarations]========================*/
 
@@ -41,6 +49,7 @@ extern void wifi_init_softap(void);
 /*==================[internal constants]====================================*/
 
 /*==================[external data]=========================================*/
+extern uint32_t KnxIPInterface_IpAddr;
 
 /*==================[internal data]=========================================*/
 
