@@ -24,31 +24,10 @@
 #include "KNXnetIP.h"
 
 /*==================[macros]================================================*/
-#define IP_ADDRESS(x,y,z,t) (uint32_t)((((uint32_t)t << 24) & 0xFF000000) | \
-                                       (((uint32_t)z << 16) & 0xFF0000) | \
-                                       (((uint32_t)y << 8) & 0xFF00) | \
-                                       ((uint32_t)x & 0xFF))
-
-#define CHANNEL_1 (1U)
-#define CHANNEL_2 (2U)
-#define CHANNEL_3 (3U)
-#define CHANNEL_4 (4U)
-
-#define KNX_CHANNEL_NUM (4U)
-
-#define KNX_INDIVIDUAL_ADDR  (0x1101U)
-#define KNX_SUPPORTED_SERVICE_NUM (4U)
-#define KNX_INDIVIDUAL_ADDR_NUM (2U)
-#define KNX_TUNNELLING_SLOT_NUM (1U)
-
-#define KNX_TUNNELLING_SLOT_STATUS_FREE       (0x01U)
-#define KNX_TUNNELLING_SLOT_STATUS_AUTHORIZED (0x02U)
-#define KNX_TUNNELLING_SLOT_STATUS_USABLE     (0x04U)
 
 /*==================[type definitions]======================================*/
 
 /*==================[external function declarations]========================*/
-extern uint32_t KnxIPInterface_IpAddr;
 
 /*==================[internal function declarations]========================*/
 
@@ -57,6 +36,8 @@ extern uint32_t KnxIPInterface_IpAddr;
 /*==================[internal constants]====================================*/
 
 /*==================[external data]=========================================*/
+extern uint32_t KnxIPInterface_IpAddr;
+
 KNXnetIP_ChannelType KNXnetIP_Channel[KNX_CHANNEL_NUM] = {
     {CHANNEL_1, CH_FREE},
     {CHANNEL_2, CH_FREE},

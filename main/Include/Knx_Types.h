@@ -346,6 +346,7 @@ typedef enum {
     BUS_CONNECTION_STATUS,
     KNX_MANUFACTURER_CODE,
     ACTIVE_EMI_TYPE,
+    INFO_SERVICE_EN = 0x08U,
 } KNXnetIP_FeatureIdentifierType;
 
 typedef enum {
@@ -375,6 +376,7 @@ typedef struct {
     bool BusStatus;
     uint16_t ManufacturerCode;
     uint16_t ActiveEMIType;
+    bool InfoServiceEnable;
 } KNXnetIP_TunnellingFeatureType;
 
 /*==================[external function declarations]========================*/

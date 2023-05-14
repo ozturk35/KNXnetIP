@@ -106,6 +106,8 @@ void app_main(void)
     wifi_init_sta();
 /* END WIFI CODE */
 
+    KNXnetIP_TunnellingInit();
+
     /* Initialize Ethernet */
 //    lanw5500_init(&w5500_got_ip, &w5500_disconnect, &w5500_timeout);
 

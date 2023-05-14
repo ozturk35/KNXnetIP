@@ -38,6 +38,7 @@
 /*==================[internal constants]====================================*/
 
 /*==================[external data]=========================================*/
+extern KNXnetIP_ChannelType KNXnetIP_Channel[KNX_CHANNEL_NUM];
 
 /*==================[internal data]=========================================*/
 

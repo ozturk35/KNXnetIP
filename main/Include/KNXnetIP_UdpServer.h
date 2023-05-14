@@ -34,7 +34,7 @@ void udp_mcast_task(void *pvParameters);
 void tcp_server_task(void *pvParameters);
 
 void KNXnetIP_UDPSend(uint32_t ipAddr, uint16_t port, uint8_t * txBuffer, uint16_t txLength);
-void KNXnetIP_TCPResponse(uint8_t * txBuffer, uint16_t txLength);
+void KNXnetIP_TcpUpdateTxBuffer(uint8_t * txBuffer, uint16_t txLength);
 
 extern int create_unicast_ipv4_socket(uint32_t ipAddr, uint16_t port);
 

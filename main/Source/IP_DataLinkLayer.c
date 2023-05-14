@@ -41,7 +41,7 @@
 /*==================[external data]=========================================*/
 
 /*==================[internal data]=========================================*/
-static uint8_t IP_TxBuffer[256];
+uint8_t IP_TxBuffer[256];
 // static uint8_t IP_RxBuffer[256];
 
 // static uint8_t KNXnetIP_SequenceNumber = 0U;
@@ -112,6 +112,7 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
             {
                 cemiFrame.HeaderSize = HEADER_SIZE_10;
                 cemiFrame.ProtocolVersion = KNXNETIP_VERSION_10;
+                KNXnetIP_FeatureIdentifierType featureIdentifer;
 
                 switch (cemiFrame.ServiceType)
                 {
@@ -229,16 +230,6 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
                     case DISCONNECT_RESPONSE:
                         break;
 
-                    // case DEVICE_CONFIGURATION_REQUEST:
-                    //     KNXnetIP_DeviceConfigurationResponse(&IP_TxBuffer[HEADER_SIZE_10], &txLength);
-                    //     ESP_LOGI("IP", "L_Data_Ind::DEVICE_CONFIGURATION_REQUEST");
-
-                    //     /* Construct frame header */
-                    //     cemiFrame.ServiceType = DEVICE_CONFIGURATION_RESPONSE;
-                    //     cemiFrame.TotalLength = txLength;
-
-                    //     break;
-
                     case TUNNELLING_REQUEST:
                         ESP_LOGI("IP","L_Data_Ind::TUNNELLING_REQUEST");
 
@@ -296,15 +287,40 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
 
                     case TUNNELLING_FEATURE_GET:
                         ESP_LOGI("IP","L_Data_Ind::TUNNELLING_FEATURE_GET");
+                        featureIdentifer = pduInfoPtr->SduDataPtr[10];
 
-                        //KNXnetIP_TunnellingFeatureResponse();
+                        KNXnetIP_TunnellingFeatureGet(featureIdentifer, &IP_TxBuffer[HEADER_SIZE_10], &txLength);
+
+                        /* Construct frame header */
+                        cemiFrame.ServiceType = TUNNELLING_FEATURE_RESPONSE;
+                        cemiFrame.TotalLength = HEADER_SIZE_10 + txLength;
+
+                        IP_TxBuffer[0] = cemiFrame.HeaderSize;
+                        IP_TxBuffer[1] = cemiFrame.ProtocolVersion;
+                        IP_TxBuffer[2] = (uint8_t)((cemiFrame.ServiceType & 0xFF00) >> 8);
+                        IP_TxBuffer[3] = cemiFrame.ServiceType & 0xFFU;
+                        IP_TxBuffer[4] = (uint8_t)((cemiFrame.TotalLength & 0xFF00) >> 8);
+                        IP_TxBuffer[5] = cemiFrame.TotalLength & 0xFFU;
 
                         break;
 
                     case TUNNELLING_FEATURE_SET:
                         ESP_LOGI("IP","L_Data_Ind::TUNNELLING_FEATURE_SET");
+                        featureIdentifer = pduInfoPtr->SduDataPtr[10];
+                        uint16_t value = pduInfoPtr->SduDataPtr[12];
 
-                        //KNXnetIP_TunnellingFeatureResponse();
+                        KNXnetIP_TunnellingFeatureSet(featureIdentifer, value, &IP_TxBuffer[HEADER_SIZE_10], &txLength);
+
+                        /* Construct frame header */
+                        cemiFrame.ServiceType = TUNNELLING_FEATURE_RESPONSE;
+                        cemiFrame.TotalLength = HEADER_SIZE_10 + txLength;
+
+                        IP_TxBuffer[0] = cemiFrame.HeaderSize;
+                        IP_TxBuffer[1] = cemiFrame.ProtocolVersion;
+                        IP_TxBuffer[2] = (uint8_t)((cemiFrame.ServiceType & 0xFF00) >> 8);
+                        IP_TxBuffer[3] = cemiFrame.ServiceType & 0xFFU;
+                        IP_TxBuffer[4] = (uint8_t)((cemiFrame.TotalLength & 0xFF00) >> 8);
+                        IP_TxBuffer[5] = cemiFrame.TotalLength & 0xFFU;
 
                         break;
 
@@ -324,7 +340,7 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
                     }
                     else
                     {
-                        KNXnetIP_TCPResponse(&IP_TxBuffer[0], cemiFrame.TotalLength);
+                        KNXnetIP_TcpUpdateTxBuffer(&IP_TxBuffer[0], cemiFrame.TotalLength);
                     }
                 }
                 else
