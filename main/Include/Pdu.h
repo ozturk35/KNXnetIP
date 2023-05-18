@@ -49,6 +49,8 @@
 #define NPDU_LPDU_OFFSET     (5U)
 #define APDU_GROUPVALUE_RESPONSE_DATA_OFFSET (1U) /* APCI in octets 6-7, data starting from octet 8 */
 
+#define EMI_FRAME_DATA_OFFSET          (0x06U)
+
 /* octet 0 - Control Field Masks/Offsets/Values */
 #define CTRL_FIELD_FRAME_FORMAT_MASK   (0x80U)
 #define CTRL_FIELD_REPEAT_FLAG_MASK    (0x20U)
@@ -75,6 +77,7 @@
 #define CTRLE_FIELD_EFF_MASK          (0x0FU)
 
 /* octet 5 - Length Field Masks */
+#define LENGTH_FIELD_AT_HC_MASK        (0xF0U)
 #define LENGHT_FIELD_ADDRESS_TYPE_MASK (0x80U)
 #define LENGTH_FIELD_NPCI_MASK         (0x70U)
 #define LENGTH_FIELD_LG_MASK           (0x0FU)

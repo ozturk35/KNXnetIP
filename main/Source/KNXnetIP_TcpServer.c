@@ -34,7 +34,10 @@
 
 static const char *TAG = "KNXnetIP_TcpServer";
 
-int KNXnetIP_TCPSocket = -1;
+bool KNXnetIP_TcpTxTunnelReqPending = false;
+
+uint32_t KNXnetIP_TcpIpAddr = 0;
+int KNXnetIP_TcpSock = -1;
 
 uint8_t * Tcp_TxBufferPtr;
 uint16_t Tcp_TxLength = 0;
@@ -65,7 +68,6 @@ static void tcp_transmit(const int sock, uint32_t ipAddr, uint16_t port)
             rx_buffer[len] = 0; /* Null-terminate whatever is received and treat it like a string */ 
             ESP_LOGI(TAG, "Received %d bytes", len);
 
-
             PduInfoType lpdu;
             lpdu.SduDataPtr = (uint8_t *)&rx_buffer;
             lpdu.SduLength = (uint8_t)len;
@@ -73,7 +75,7 @@ static void tcp_transmit(const int sock, uint32_t ipAddr, uint16_t port)
             /* Call L_Data_Ind to inform IP DataLinkLayer */
             IP_L_Data_Ind(&lpdu, ipAddr, port);
 
-            /* IP DataLinkLayer updates Tcp_TxBufferPtr via call to KNXnetIP_TCPResponse */
+            /* IP DataLinkLayer updates Tcp_TxBufferPtr via call to KNXnetIP_TcpUpdateTxBuffer */
 
             if (0 == Tcp_TxLength)
             {
@@ -96,6 +98,34 @@ static void tcp_transmit(const int sock, uint32_t ipAddr, uint16_t port)
             }
         }
     } while (len > 0);
+}
+
+void tcp_transmitPendingTunnelReq(const int sock, uint32_t ipAddr, uint16_t port)
+{
+    /* IP DataLinkLayer updates Tcp_TxBufferPtr via call to KNXnetIP_TunnellingRequest */
+    if (NULL == Tcp_TxBufferPtr)
+    {
+        ESP_LOGE(TAG, "Error occurred during getting data from link layer. NULL_PTR");
+    }
+    else if (0 == Tcp_TxLength)
+    {
+        ESP_LOGE(TAG, "Error occurred during getting data from link layer. ZERO_LENGTH");
+    }
+    else
+    {
+        // send() can return less bytes than supplied length.
+        // Walk-around for robust implementation.
+        int to_write = Tcp_TxLength;
+        while (to_write > 0) {
+            int written = send(sock, Tcp_TxBufferPtr + (Tcp_TxLength - to_write), to_write, 0);
+            if (written < 0) {
+                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                // Failed to retransmit, giving up
+                return;
+            }
+            to_write -= written;
+        }
+    }
 }
 
 void tcp_server_task(void *pvParameters)
@@ -170,7 +200,11 @@ void tcp_server_task(void *pvParameters)
         ipAddr = htonl(((struct sockaddr_in *)&source_addr)->sin_addr.s_addr);
         port = htons(((struct sockaddr_in *)&source_addr)->sin_port);
 
+        KNXnetIP_TcpIpAddr = ipAddr;
+        KNXnetIP_TcpSock = sock;
+
         ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
+        ESP_LOGI(TAG, "Socket accepted port: %d", port);
 
         tcp_transmit(sock, ipAddr, port);
 

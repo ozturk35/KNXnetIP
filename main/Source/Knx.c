@@ -70,7 +70,7 @@ static void tpuart_rx_task(void *arg)
         const int rxBytes = uart_read_bytes(UART_NUM_1, data, 1024, 20 / portTICK_PERIOD_MS);
         if (rxBytes > 0) {
             data[rxBytes] = 0;
-            ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
+            ESP_LOGI(RX_TASK_TAG, "Read %d bytes", rxBytes);
             ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
 
             /* Call L_Data_Ind to inform TP DataLinkLayer */
@@ -82,6 +82,11 @@ static void tpuart_rx_task(void *arg)
         }
     }
     free(data);
+}
+
+static void got_network_connection()
+{
+    ESP_LOGI(TAG, "successfully established network connection!");
 }
 
 void app_main(void)
@@ -109,10 +114,11 @@ void app_main(void)
     KNXnetIP_TunnellingInit();
 
     /* Initialize Ethernet */
-//    lanw5500_init(&w5500_got_ip, &w5500_disconnect, &w5500_timeout);
+//    lanw5500_init(got_network_connection, NULL, NULL);
 
     xTaskCreate(&udp_mcast_task, "udp_mcast", 4096, NULL, 5, NULL);
     xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
 
-    xTaskCreate(tpuart_rx_task, "tpuart_rx_task", 1024*2, NULL, configMAX_PRIORITIES - 1, NULL);
+    xTaskCreate(tpuart_rx_task, "tpuart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL);
+
 }

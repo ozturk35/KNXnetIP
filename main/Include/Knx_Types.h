@@ -43,6 +43,8 @@
 /* Constant size of KNXnet/IP header as defined in protocol version 1.0 */
 #define HEADER_SIZE_10      (0x06U)
 
+#define CONNECTION_HEADER_SIZE (0x04U)
+
 /* Tunnelling CONNECT_ACK error codes */
 #define E_TUNNELLING_LAYER (0x29U) /* The KNXnet/IP Server device does not support the requested KNXnet/IP Tunnelling layer. */
 
@@ -93,9 +95,9 @@ typedef enum {
 
 typedef enum {
   /* L_Data */
-  L_data_req = 0x11U,
-  L_data_con = 0x2EU,
-  L_data_ind = 0x29U,
+  L_DATA_REQ = 0x11U,
+  L_DATA_CON = 0x2EU,
+  L_DATA_IND = 0x29U,
 
   /* Data Property */
   M_PropRead_req = 0xFCU,
@@ -115,30 +117,6 @@ typedef enum {
   M_Reset_req = 0xF1U,
 
 } MessageCodeType;
-
-typedef enum {
-    None,
-    Auth,
-    AuthConf,
-} SecComType;
-
-typedef struct {
-    uint8_t SubnetworkAddr; /* Area Address (4-bit) | Line Address (4-bit) */
-    uint8_t DeviceAddr;
-} KNXnetIP_IndividualAddrType;
-
-typedef struct {
-    uint8_t MainGroup;
-    uint8_t MiddleGroup;
-    uint8_t SubGroup;
-} KNXnetIP_GroupAddressType;
-
-typedef struct {
-    uint16_t address;
-    uint8_t dataPointId;
-} Knx_ObjectType;
-
-typedef unsigned short KNXnetIP_TotalLengthType;
 
 /* Service IDs */
 typedef enum {
@@ -284,56 +262,9 @@ typedef struct {
 } KNXnetIP_CRIType;
 
 typedef struct {
-    uint8_t StructureLength;
-    KNXnetIP_ConnectionType ConnectionTypeCode;
-    uint8_t * HostProtocolIndepDataPtr;
-    uint8_t * HostProtocolDepDataPtr;
-} KNXnetIP_CRDType;
-
-typedef struct {
-    uint8_t StructureLength;
-    uint8_t CommunicationChannelId;
-    uint8_t SequenceCounter;
-    uint8_t reserved;
-} KNXnetIP_TunnellingConnectionHeaderType;
-
-typedef struct {
-    uint8_t CtrlField1;
-    uint8_t CtrlField2;
-    uint16_t SourceAddr;
-    uint16_t DestAddr;
-    uint8_t DataLength;
-    TPCIType Tpci;
-    APCIType Apci_data;
-    uint8_t * Data;
-} KNXnetIP_ServiceInformationType;
-
-typedef struct {
-    MessageCodeType MessageCode;
-    uint8_t AdditionalInfoLength;
-    uint8_t * AdditionalInformation;
-    KNXnetIP_ServiceInformationType * ServiceInformation;
-} KNXnetIP_TunnelingCemiFrameType;
-
-typedef struct {
     KNXnetIP_ServiceFamilyIdType ServiceFamilyId;
     uint8_t ServiceFamilyVersion;
 } KNXnetIP_ServiceFamilyType;
-
-typedef enum {
-    TX_IDLE,
-    TX_QUEUED,
-    TX_OVFL,
-    TX_SOCK_FAIL,
-    TX_ERROR,
-} KNXnetIP_SendStatusType;
-
-typedef struct {
-    uint32_t ipAddress;
-    uint32_t port;
-    KNXnetIP_SendStatusType status;
-    uint16_t txLength;
-} KNXnetIP_SendQueueType;
 
 typedef struct {
     uint16_t IndvAddr;

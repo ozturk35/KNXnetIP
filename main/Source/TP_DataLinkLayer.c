@@ -7,12 +7,16 @@
 #include "TP_DataLinkLayer.h"
 #include "TpUart2_DataLinkLayer.h"
 
+#define KNXNETIP_DEBUG_LOGGING
+
 static uint8_t L_TxBuffer[64];
 static uint8_t L_RxBuffer[64];
 
 void TP_L_Data_Req(AckType ack, AddressType addrType, uint16_t destAddr, FrameFormatType frameFormat, PduInfoType * pduInfoPtr, uint8_t octetCount, PriorityType priority, uint16_t sourceAddr);
 void TP_L_Data_Con(AddressType addrType, uint16_t destAddr, FrameFormatType frameFormat, uint8_t octetCount, PriorityType priority, uint16_t sourceAddr, PduInfoType * pduInfoPtr, StatusType status);
 void TP_L_Data_Ind(AckType ack, AddressType addrType, uint16_t destAddr, FrameFormatType frameFormat, PduInfoType * pduInfoPtr, uint8_t octetCount, PriorityType priority, uint16_t sourceAddr);
+void TP_GW_L_Data_Req(uint8_t * bufferPtr, uint8_t rxLength);
+void TP_GW_L_Data_Ind(PduInfoType * pduInfoPtr);
 
 static uint8_t TP_L_Data_CalculateFCS(uint8_t * l_data, uint8_t length);
 
@@ -76,12 +80,6 @@ void TP_L_Data_Req(AckType ack, AddressType addrType, uint16_t destAddr, FrameFo
     lpdu.SduLength = index;
 
     TpUart2_L_Data_Req(CTRL_FIELD_NON_REPEATED_FRAME, destAddr, addrType, priority, &lpdu);
-
-#if 0
-    for (index = 0; index < NPDU_LPDU_OFFSET + pduInfoPtr->SduLength; index++)
-        ESP_LOGI("TP","L_Data[%d]::0x%X", index, L_TxBuffer[index]);
-#endif
-
 }
 
 void TP_L_Data_Ind(AckType ack, AddressType addrType, uint16_t destAddr, FrameFormatType frameFormat, PduInfoType * pduInfoPtr, uint8_t octetCount, PriorityType priority, uint16_t sourceAddr)
@@ -118,7 +116,6 @@ void TP_L_Data_Ind(AckType ack, AddressType addrType, uint16_t destAddr, FrameFo
         {
 #endif
             /* Tunnel to IP DataLinkLayer */
-//            KNXnetIP_TunnelTP2IP(&L_RxBuffer, (uint8_t)(pduInfoPtr->SduLength));
 
 #ifdef FCS_CHECK_ENABLED
         }
@@ -135,6 +132,91 @@ void TP_L_Data_Con(AddressType addrType, uint16_t destAddr, FrameFormatType fram
     (void)priority;
     (void)sourceAddr;
     (void)status;
+}
+
+void TP_GW_L_Data_Req(uint8_t * bufferPtr, uint8_t rxLength)
+{
+    PduInfoType lpdu;
+    uint8_t index = 0;
+
+    /* Set CTRL field */
+    L_TxBuffer[index++] = bufferPtr[CEMI_FRAME_CTRL1_FIELD_OFFSET];
+
+    /* Set Source Address */
+    L_TxBuffer[index++] = (uint8_t)((KNX_INDIVIDUAL_ADDR >> 8) & 0xFFU);
+    L_TxBuffer[index++] = (uint8_t)(KNX_INDIVIDUAL_ADDR & 0xFFU);
+
+    /* Set Destination Address */
+    L_TxBuffer[index++] = bufferPtr[CEMI_FRAME_DA_HI_BYTE_OFFET];
+    L_TxBuffer[index++] = bufferPtr[CEMI_FRAME_DA_LO_BYTE_OFFET];
+
+    /* Set Length Field - AT, HC, LG */
+    L_TxBuffer[index++] = bufferPtr[CEMI_FRAME_CTRL2_FIELD_OFFSET] | bufferPtr[CEMI_FRAME_LENGTH_FIELD_OFFSET];
+
+    /* Copy Data into Tx Buffer */
+    memcpy(&L_TxBuffer[index], &bufferPtr[CEMI_FRAME_TPDU_FIELD_OFFSET], (uint8_t)(rxLength - CEMI_FRAME_TPDU_FIELD_OFFSET));
+    index += rxLength - CEMI_FRAME_TPDU_FIELD_OFFSET;
+
+    /* Set FCS field */
+    L_TxBuffer[index] = TP_L_Data_CalculateFCS(&L_TxBuffer[0], index);
+    index++;
+
+    lpdu.SduDataPtr = &L_TxBuffer[0];
+    lpdu.SduLength = index;
+
+    TpUart2_L_Data_Req(0, 0, 0, 0, &lpdu);
+}
+
+void TP_GW_L_Data_Ind(PduInfoType * pduInfoPtr)
+{
+    uint8_t index = 0;
+
+    /* Message Code */
+    L_RxBuffer[index++] =  L_DATA_IND;
+    L_RxBuffer[index++] =  0x00U;
+
+    /* CTRL1 Field */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[0];
+
+    /* CTRL2 Field - AT, HC, EFF */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[5] & LENGTH_FIELD_AT_HC_MASK;
+
+    /* Source Address - High */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[1];
+
+    /* Source Address - Low */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[2];
+
+    /* Destination Address - High */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[3];
+
+    /* Destination Address - Low */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[4];
+
+    /* Data Length */
+    L_RxBuffer[index++] =  pduInfoPtr->SduDataPtr[5] & LENGTH_FIELD_LG_MASK;
+
+    /* Copy Data into Rx Buffer */
+    memcpy(&L_RxBuffer[index], &pduInfoPtr->SduDataPtr[EMI_FRAME_DATA_OFFSET], pduInfoPtr->SduLength - (EMI_FRAME_DATA_OFFSET + FCS_FIELD_SIZE));
+    index += pduInfoPtr->SduLength - (EMI_FRAME_DATA_OFFSET + FCS_FIELD_SIZE);
+
+    /* Tunnelling Request - Send over IP */
+    KNXnetIP_TunnellingRequest(&L_RxBuffer[0], index);
+
+#ifdef KNXNETIP_DEBUG_LOGGING
+    for (uint8_t rxIndex = 0; rxIndex < index; rxIndex++)
+    {
+        if (L_RxBuffer[rxIndex] < 0x10U)
+        {
+            printf("0%X ", L_RxBuffer[rxIndex]);
+        }
+        else
+        {
+            printf("%X ", L_RxBuffer[rxIndex]);
+        }
+    }
+    printf("\n ");
+#endif
 }
 
 static uint8_t TP_L_Data_CalculateFCS(uint8_t * l_data, uint8_t length)

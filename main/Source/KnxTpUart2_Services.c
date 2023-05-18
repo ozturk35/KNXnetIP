@@ -219,7 +219,7 @@ static UartReq_ReturnType KnxTpUart2_Transmit(const char * serviceName, const vo
     int txBytes = uart_write_bytes(UART_NUM_1, data, size);
     uart_wait_tx_done(UART_NUM_1, portMAX_DELAY);
 
-    ESP_LOGI(serviceName, "Wrote %d bytes", txBytes);
+//    ESP_LOGI(serviceName, "Wrote %d bytes", txBytes);
 
     return txBytes;
 }

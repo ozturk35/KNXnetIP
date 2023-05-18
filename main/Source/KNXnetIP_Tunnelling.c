@@ -35,6 +35,7 @@
 void KNXnetIP_TunnellingInit(void);
 void KNXnetIP_TunnellingFeatureGet(KNXnetIP_FeatureIdentifierType featureIdentifier, uint8_t * txBuffer, uint16_t * txLength);
 void KNXnetIP_TunnellingFeatureSet(KNXnetIP_FeatureIdentifierType featureIdentifier, uint16_t value, uint8_t * txBuffer, uint16_t * txLength);
+void KNXnetIP_TunnellingRequest(uint8_t * bufferPtr, uint16_t length);
 
 /*==================[internal function declarations]========================*/
 
@@ -57,70 +58,23 @@ void KNXnetIP_TunnellingInit(void)
     KNXnetIP_TunnellingFeature.ActiveEMIType = CEMI;
 }
 
-void KNXnetIP_TunnellingAck(KNXnetIP_TunnellingConnectionHeaderType connectionHeader, KNXnetIP_TunnelingCemiFrameType cemiFrame, uint8_t * txBuffer, uint16_t * txLength)
+void KNXnetIP_TunnellingAck(uint8_t * txBuffer, uint16_t * txLength)
 {
-    KNXnetIP_ServiceInformationType serviceInformation;
-    (void)serviceInformation;
-
-    switch(cemiFrame.MessageCode)
-    {
-        case L_data_req:
-            /* Construct TpUart2 Frame */
-            bool repeatFlag = 0U;
-            uint16_t destAddr = 0U;
-            AddressType addrType = 0U;
-            PriorityType priority = 0U;
-//            PduInfoType * pduInfoPtr;
-
-            /* Set function parameters for TpUart2 Message */
-            // repeatFlag = 0;
-
-            /* Call TpUart2 L_Data_Req */
-//            TpUart2_L_Data_Req(repeatFlag, destAddr, addrType, priority, pduInfoPtr);
-
-            break;
-
-        case M_PropRead_req:
-            break;
-
-        case M_PropWrite_req:
-            break;
-
-        case M_FuncPropCommand_req:
-            break;
-
-        case M_FuncPropStateRead_req:
-            break;
-
-        case M_Reset_req:
-            break;
-
-        default:
-            /* Other message code types shall not be received. */
-            break;
-    }
-
-    /* Create Tunnelling Ack frame */
     uint8_t txBytes = 0;
     KNXnetIP_ErrorCodeType errorCode = E_NO_ERROR;
 
-    txBuffer[txBytes++] = connectionHeader.StructureLength;
-    txBuffer[txBytes++] = connectionHeader.CommunicationChannelId;
-    txBuffer[txBytes++] = connectionHeader.SequenceCounter;
+    txBuffer[txBytes++] = 0x04U;
+    txBuffer[txBytes++] = KNXnetIP_Channel[0].ChannelId;
+    txBuffer[txBytes++] = 0x00U;
     txBuffer[txBytes++] = errorCode;
 
     /* Update Tx Length */
     *txLength = txBytes;
 }
 
-void KNXnetIP_TunnelIP2TP(PduInfoType * pduInfoPtr)
+void KNXnetIP_TunnelIP2TP(uint8_t * rxBufferPtr, uint8_t rxLength)
 {
-//    TP_L_Data_Req();
-}
-
-void KNXnetIP_TunnelTP2IP(PduInfoType * pduInfoPtr)
-{
-//    IP_L_Data_Ind();
+    TP_GW_L_Data_Req(rxBufferPtr, rxLength);
 }
 
 void KNXnetIP_TunnellingFeatureGet(KNXnetIP_FeatureIdentifierType featureIdentifier, uint8_t * txBuffer, uint16_t * txLength)
@@ -185,7 +139,6 @@ void KNXnetIP_TunnellingFeatureGet(KNXnetIP_FeatureIdentifierType featureIdentif
 
 void KNXnetIP_TunnellingFeatureSet(KNXnetIP_FeatureIdentifierType featureIdentifier, uint16_t value, uint8_t * txBuffer, uint16_t * txLength)
 {
-    uint16_t featureValue = 0;
     uint16_t txBytes = 0;
 
     /* Connection Header - Structure Length */
@@ -243,6 +196,30 @@ void KNXnetIP_TunnellingFeatureSet(KNXnetIP_FeatureIdentifierType featureIdentif
     *txLength = txBytes;
 }
 
+void KNXnetIP_TunnellingRequest(uint8_t * bufferPtr, uint16_t length)
+{
+    KNXnetIP_ServiceType serviceType = TUNNELLING_REQUEST;
+    uint16_t txLength = HEADER_SIZE_10 + CONNECTION_HEADER_SIZE + length;
+
+    IP_TxBuffer[0] = HEADER_SIZE_10;
+    IP_TxBuffer[1] = KNXNETIP_VERSION_10;
+    IP_TxBuffer[2] = (uint8_t)((serviceType & 0xFF00) >> 8);
+    IP_TxBuffer[3] = serviceType & 0xFFU;
+    IP_TxBuffer[4] = (uint8_t)((txLength & 0xFF00) >> 8);
+    IP_TxBuffer[5] = (txLength & 0xFFU);
+    IP_TxBuffer[6] = 0x04U;
+    IP_TxBuffer[7] = KNXnetIP_Channel[0].ChannelId;
+    IP_TxBuffer[8] = 0x00U;
+    IP_TxBuffer[9] = 0x00U;
+
+    memcpy(&IP_TxBuffer[10], bufferPtr, length);
+
+    KNXnetIP_TcpUpdateTxBuffer(&IP_TxBuffer[0], HEADER_SIZE_10 + CONNECTION_HEADER_SIZE + length);
+
+    tcp_transmitPendingTunnelReq(KNXnetIP_TcpSock, KNXnetIP_TcpIpAddr, UDP_PORT);
+
+    ESP_LOGW("TAG", "KNXnetIP_TunnellingRequest");
+}
 /*==================[internal function definitions]=========================*/
 
 /*==================[end of file]===========================================*/

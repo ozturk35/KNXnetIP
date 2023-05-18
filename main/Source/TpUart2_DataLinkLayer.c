@@ -6,12 +6,12 @@
 
 #include "Pdu.h"
 #include "Knx_Types.h"
-#include "KNXnetIP_Tunnelling.h"
+#include "KNXnetIP.h"
 #include "TP_DataLinkLayer.h"
 #include "TpUart2_DataLinkLayer.h"
 #include "KnxTpUart2_Services.h"
 
-static uint8_t TpUart2_TxBuffer[64];
+static uint8_t TpUart2_TxBuffer[128];
 //static uint8_t TpUart2_RxBuffer[64];
 
 void TpUart2_L_Data_Req(bool repeatFlag, uint16_t destAddr, AddressType addrType, PriorityType priority, PduInfoType * pduInfoPtr);
@@ -45,6 +45,10 @@ void TpUart2_L_Data_Req(bool repeatFlag, uint16_t destAddr, AddressType addrType
             }
         }
     }
+    (void)repeatFlag;
+    (void)destAddr;
+    (void)addrType;
+    (void)priority;
 }
 
 void TpUart2_L_Data_Con()
@@ -56,33 +60,20 @@ void TpUart2_L_Data_Ind(PduInfoType * pduInfoPtr)
 {
     if (NULL == pduInfoPtr)
     {
-        ESP_LOGI("TpUart2_DataLinkLayer","TpUart2_L_Data_Con: ERR_NULL_PTR");
+        ESP_LOGI("TpUart2_DataLinkLayer","TpUart2_L_Data_Ind: ERR_NULL_PTR");
     }
     else if (0U == (uint8_t)(pduInfoPtr->SduLength))
     {
-        ESP_LOGI("TpUart2_DataLinkLayer","TpUart2_L_Data_Con: ERR_ZERO_LENGTH_LPDU");
+        ESP_LOGI("TpUart2_DataLinkLayer","TpUart2_L_Data_Ind: ERR_ZERO_LENGTH_LPDU");
     }
     else
     {
-        FrameFormatType frameFormat;
-        PriorityType priority;
-        bool repeatFlag;
-        uint8_t octetCount;
+        ESP_LOGI("TpUart2_DataLinkLayer","TpUart2_L_Data_Ind: TUNNEL TO IP");
 
-        frameFormat = (FrameFormatType)(((uint8_t)(pduInfoPtr->SduDataPtr[0]) & CTRL_FIELD_FRAME_FORMAT_MASK) >> CTRL_FIELD_FRAME_FORMAT_OFFSET);
-        repeatFlag = (bool)(((uint8_t)(pduInfoPtr->SduDataPtr[0]) & CTRL_FIELD_REPEAT_FLAG_MASK) >> CTRL_FIELD_REPEAT_FLAG_OFFSET);
-        priority = (PriorityType)(((uint8_t)(pduInfoPtr->SduDataPtr[0]) & CTRL_FIELD_PRIORITY_MASK) >> CTRL_FIELD_PRIORITY_OFFSET);
-
-        if (StandardFrame == frameFormat)
+        if (true == KNXnetIP_Connected)
         {
-            octetCount = (uint8_t)(pduInfoPtr->SduDataPtr[5U]) & LENGTH_FIELD_LG_MASK;
+            /* Tunnel to IP */
+            TP_GW_L_Data_Ind(pduInfoPtr);
         }
-        else
-        {
-            octetCount = (uint8_t)(pduInfoPtr->SduDataPtr[6U]);
-        }
-
-        /* Tunnel to IP */
-        // KNXnetIP_TunnelTP2IP(pduInfoPtr);
     }
 }

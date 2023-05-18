@@ -264,7 +264,7 @@ void udp_mcast_task(void *pvParameters)
                     ipAddr = htonl(((struct sockaddr_in *)&raddr)->sin_addr.s_addr);
                     port = htons(((struct sockaddr_in *)&raddr)->sin_port);
 
-                    ESP_LOGI(TAG, "received %d bytes from %s:%d", len, raddr_name, port);
+//                    ESP_LOGI(TAG, "received %d bytes from %s:%d", len, raddr_name, port);
 
                     PduInfoType lpdu;
                     lpdu.SduDataPtr = (uint8_t *)&recvbuf;

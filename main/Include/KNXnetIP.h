@@ -39,6 +39,10 @@
 
 /*==================[external data]=========================================*/
 extern KNXnetIP_ChannelType KNXnetIP_Channel[KNX_CHANNEL_NUM];
+extern bool KNXnetIP_TcpTxTunnelReqPending;
+extern bool KNXnetIP_Connected;
+extern uint32_t KNXnetIP_TcpIpAddr;
+extern int KNXnetIP_TcpSock;
 
 /*==================[internal data]=========================================*/
 

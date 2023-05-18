@@ -20,9 +20,16 @@
 /*==================[inclusions]============================================*/
 
 /*==================[macros]================================================*/
+#define OZTURK
 
+#ifndef OZTURK
+#define ESP_WIFI_SSID "Hottingerstrasse"
+#define ESP_WIFI_PASS "hothot18"
+#else
 #define ESP_WIFI_SSID      "SUPERONLINE_WiFi_6637"
 #define ESP_WIFI_PASS      "9MMUPEW3FJCL"
+#endif
+
 #define ESP_MAXIMUM_RETRY  3
 
 #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_HUNT_AND_PECK
