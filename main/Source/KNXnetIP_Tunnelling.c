@@ -217,9 +217,8 @@ void KNXnetIP_TunnellingRequest(uint8_t * bufferPtr, uint16_t length)
     KNXnetIP_TcpUpdateTxBuffer(&IP_TxBuffer[0], HEADER_SIZE_10 + CONNECTION_HEADER_SIZE + length);
 
     tcp_transmitPendingTunnelReq(KNXnetIP_TcpSock, KNXnetIP_TcpIpAddr, UDP_PORT);
-
-    ESP_LOGW("TAG", "KNXnetIP_TunnellingRequest");
 }
+
 /*==================[internal function definitions]=========================*/
 
 /*==================[end of file]===========================================*/

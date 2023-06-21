@@ -25,7 +25,6 @@
 #include "KNXnetIP.h"
 
 #include "TP_DataLinkLayer.h"
-#define KNXNETIP_DEBUG_LOGGING
 
 bool KNXnetIP_Connected = false;
 uint16_t KNXnetIP_ConnectionPort = 0;
@@ -53,9 +52,9 @@ uint8_t IP_RxBuffer[128];
 /*==================[external function definitions]=========================*/
 
 void IP_L_Data_Req(AckType ack, AddressType addrType, uint16_t destAddr, FrameFormatType frameFormat, PduInfoType * pduInfoPtr, uint16_t octetCount, PriorityType priority, uint16_t sourceAddr);
-void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port);
+void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port, KNXnetIP_HostProtocolCodeTpe protocol);
 
-void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
+void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port, KNXnetIP_HostProtocolCodeTpe protocol)
 {
     if (NULL == pduInfoPtr)
     {
@@ -204,7 +203,7 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
 #ifdef KNXNETIP_DEBUG_LOGGING
                         ESP_LOGI("IP", "L_Data_Ind::CONNECTIONSTATE_REQUEST");
 #endif
-                        KNXnetIP_ConnectionStateResponse(errorCode, &IP_TxBuffer[0], &txLength);
+                        KNXnetIP_ConnectionStateResponse(errorCode, &IP_TxBuffer[HEADER_SIZE_10], &txLength);
 
                         /* Construct frame header */
                         cemiFrame.ServiceType = CONNECTIONSTATE_RESPONSE;
@@ -271,7 +270,7 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
                         /* Gateway to TP-UART2 Interface */
                         KNXnetIP_TunnelIP2TP(&IP_RxBuffer[0], pduInfoPtr->SduLength - (HEADER_SIZE_10 + CONNECTION_HEADER_SIZE));
 
-                        if (IPV4_UDP == dataIndHpai.HostProtocolCode)
+                        if (IPV4_UDP == protocol)
                         {
                             KNXnetIP_TunnellingAck(&IP_TxBuffer[HEADER_SIZE_10], &txLength);
 
@@ -286,9 +285,24 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
                             IP_TxBuffer[4] = (uint8_t)((cemiFrame.TotalLength & 0xFF00) >> 8);
                             IP_TxBuffer[5] = cemiFrame.TotalLength & 0xFFU;
                         }
+                        else if (IPV4_TCP == protocol)
+                        {
+                            /* Send L_Data.con to client */
+                            txLength = pduInfoPtr->SduDataPtr[5];
+                            cemiFrame.TotalLength = txLength;
+                            memcpy(&IP_TxBuffer[0], pduInfoPtr->SduDataPtr, txLength);
+
+                            /* Update Message Code to L_Data.con (0x2E) */
+                            IP_TxBuffer[10] = L_DATA_CON;
+
+                            /* Update Source Address */
+                            IP_TxBuffer[14] = 0x11;
+                            IP_TxBuffer[15] = 0xFA;
+                        }
                         else
                         {
-                            /* For TCP communication, no TUNNELLING_ACK shall be sent. */
+                            /* Protocol is neither UDP nor TCP. */
+                            /* Should not get here.             */
                         }
 
                         break;
@@ -347,7 +361,7 @@ void IP_L_Data_Ind(PduInfoType * pduInfoPtr, uint32_t ipAddr, uint16_t port)
 
                 if (txLength > 0)
                 {
-                    if (IPV4_UDP == dataIndHpai.HostProtocolCode)
+                    if (IPV4_UDP == protocol)
                     {
                         KNXnetIP_UDPSend(ipAddr, port, &IP_TxBuffer[0], cemiFrame.TotalLength);
                     }

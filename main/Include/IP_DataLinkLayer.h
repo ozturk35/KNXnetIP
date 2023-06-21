@@ -5,7 +5,7 @@
 #include "Knx_Types.h"
 
 void IP_L_Data_Req(AckType ack, AddressType addrType, uint16_t destAddr, FrameFormatType frameFormat, PduInfoType * pduInfoPtr, uint16_t octetCount, PriorityType priority, uint16_t sourceAddr);
-void IP_L_Data_Ind(PduInfoType * pduInfoPtr,  uint32_t ipAddr, uint16_t port);
+void IP_L_Data_Ind(PduInfoType * pduInfoPtr,  uint32_t ipAddr, uint16_t port,  KNXnetIP_HostProtocolCodeTpe protocol);
 
 extern uint8_t IP_TxBuffer[256];
 

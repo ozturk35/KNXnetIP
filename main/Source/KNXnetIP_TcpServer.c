@@ -66,14 +66,14 @@ static void tcp_transmit(const int sock, uint32_t ipAddr, uint16_t port)
         else
         {
             rx_buffer[len] = 0; /* Null-terminate whatever is received and treat it like a string */ 
-            ESP_LOGI(TAG, "Received %d bytes", len);
+//            ESP_LOGI(TAG, "Received %d bytes", len);
 
             PduInfoType lpdu;
             lpdu.SduDataPtr = (uint8_t *)&rx_buffer;
             lpdu.SduLength = (uint8_t)len;
 
             /* Call L_Data_Ind to inform IP DataLinkLayer */
-            IP_L_Data_Ind(&lpdu, ipAddr, port);
+            IP_L_Data_Ind(&lpdu, ipAddr, port, IPV4_TCP);
 
             /* IP DataLinkLayer updates Tcp_TxBufferPtr via call to KNXnetIP_TcpUpdateTxBuffer */
 
@@ -202,9 +202,6 @@ void tcp_server_task(void *pvParameters)
 
         KNXnetIP_TcpIpAddr = ipAddr;
         KNXnetIP_TcpSock = sock;
-
-        ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
-        ESP_LOGI(TAG, "Socket accepted port: %d", port);
 
         tcp_transmit(sock, ipAddr, port);
 

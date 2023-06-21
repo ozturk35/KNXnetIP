@@ -46,7 +46,6 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
         err = -1;
         goto err;
     }
-    ESP_LOGI(TAG, "Configured IPV4 Multicast address %s", inet_ntoa(imreq.imr_multiaddr.s_addr));
     if (!IP_MULTICAST(ntohl(imreq.imr_multiaddr.s_addr))) {
         ESP_LOGW(V4TAG, "Configured IPV4 multicast address '%s' is not a valid multicast address. This will probably not work.", MULTICAST_IPV4_ADDR);
     }
@@ -164,7 +163,6 @@ void KNXnetIP_UDPSend(uint32_t ipAddr, uint16_t port, uint8_t * txBuffer, uint16
     if (KNXnetIP_MulticastSocket < 0)
     {
         ESP_LOGE(TAG, "Failed to get IPv4 socket");
-        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
     else
     {
@@ -178,7 +176,6 @@ void KNXnetIP_UDPSend(uint32_t ipAddr, uint16_t port, uint8_t * txBuffer, uint16
 
         do
         {
-            vTaskDelay(5 / portTICK_PERIOD_MS);
             err = sendto(KNXnetIP_MulticastSocket, txBuffer, txLength, 0, (struct sockaddr *)&sdestv4, sizeof(struct sockaddr_in));
 
             if (err < 0)
@@ -202,7 +199,6 @@ void udp_mcast_task(void *pvParameters)
         if (KNXnetIP_MulticastSocket < 0)
         {
             ESP_LOGE(TAG, "Failed to create IPv4 udp multicast socket");
-            vTaskDelay(5 / portTICK_PERIOD_MS);
             continue;
         }
 
@@ -271,7 +267,7 @@ void udp_mcast_task(void *pvParameters)
                     lpdu.SduLength = (uint8_t)len;
 
                     /* Call L_Data_Ind to inform IP DataLinkLayer */
-                    IP_L_Data_Ind(&lpdu, ipAddr, port);
+                    IP_L_Data_Ind(&lpdu, ipAddr, port, IPV4_UDP);
                 }
             }
             else
