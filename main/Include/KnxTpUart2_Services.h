@@ -50,6 +50,22 @@
 #define TPUART2_DATACONFIRMFAIL        (0x0BU)
 #define TPUART2_STATE_INDICATION_MASK  (0x07U)
 
+/* Layer-2 Services */
+#define TPUART2_LAYER2_SERVICE_MASK   (0x90U)
+#define TPUART2_LAYER2_L_DATA_REQ     (0x90U)
+#define TPUART2_LAYER2_L_EXT_DATA_REQ (0x10U)
+#define TPUART2_LAYER2_L_POLLDATA_REQ (0xF0U)
+
+/* TP-UART-Control-Services */
+#define TPUART2_U_RESET_IND (0x03U)
+
+/* TP-UART-State.indication/response Service */
+#define TPUART2_STATE_SLAVE_COLLISION (0x80U)
+#define TPUART2_STATE_RECEIVE_ERROR   (0x40U)
+#define TPUART2_STATE_TRANSMIT_ERROR  (0x20U)
+#define TPUART2_STATE_PROTOCOL_ERROR  (0x10U)
+#define TPUART2_STATE_TEMP_WARNING    (0x08U)
+
 /*==================[type definitions]======================================*/
 typedef int UartReq_ReturnType;
 
